@@ -55,6 +55,10 @@ CREATE INDEX IF NOT EXISTS idx_cards_deck_due ON cards(deck_id, due_at);
 CREATE INDEX IF NOT EXISTS idx_reviews_card ON reviews(card_id);
 """
 
+# Baseline schema is version 1. Future schema changes append a migration script
+# here; each is applied in order based on PRAGMA user_version.
+MIGRATIONS: tuple[str, ...] = ()
+
 
 class Database:
     """Wraps one ``aiosqlite`` connection with explicit write transactions."""
@@ -85,7 +89,23 @@ class Database:
     async def initialize(self) -> None:
         conn = self._require_connection()
         await conn.executescript(_SCHEMA_SQL)
+        await self._apply_migrations(conn)
         await conn.commit()
+
+    async def _apply_migrations(self, conn: aiosqlite.Connection) -> None:
+        version = await self._user_version(conn)
+        if version == 0:
+            version = 1
+            await conn.execute("PRAGMA user_version = 1")
+        for target, migration in enumerate(MIGRATIONS, start=2):
+            if version < target:
+                await conn.executescript(migration)
+                await conn.execute(f"PRAGMA user_version = {target}")
+
+    async def _user_version(self, conn: aiosqlite.Connection) -> int:
+        cursor = await conn.execute("PRAGMA user_version")
+        row = await cursor.fetchone()
+        return int(row[0]) if row is not None else 0
 
     async def close(self) -> None:
         if self._conn is not None:

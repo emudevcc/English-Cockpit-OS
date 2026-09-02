@@ -1,7 +1,8 @@
 // Daily Audio & Podcast Digest (Morning Brief) with playback-rate controls.
 
-import { apiGet } from "../lib/api.js";
+import { apiGet, apiPost } from "../lib/api.js";
 import { clear, h } from "../lib/dom.js";
+import { highlightSegments } from "../lib/highlight.js";
 
 const REFRESH_MS = 30 * 60 * 1000;
 
@@ -30,7 +31,10 @@ export function init(slot) {
       }
 
       const firstEpisode = data.episodes.find((episode) => episode.audio_url);
-      if (firstEpisode) slot.append(buildPlayer(firstEpisode));
+      if (firstEpisode) {
+        slot.append(buildPlayer(firstEpisode));
+        slot.append(buildTranscript(firstEpisode));
+      }
     } catch (error) {
       renderError(error);
     }
@@ -65,4 +69,39 @@ function buildPlayer(episode) {
       h("button", { class: "chip", type: "button", onclick: setRate(1.25), text: "1.25×" }),
     ),
   );
+}
+
+function buildTranscript(episode) {
+  const container = h("div", { class: "podcast-transcript" });
+  const button = h("button", {
+    class: "chip",
+    type: "button",
+    text: "Transcript",
+    onclick: () => transcribe(episode, container, button),
+  });
+  return h("div", { class: "chips" }, button, container);
+}
+
+async function transcribe(episode, container, button) {
+  button.disabled = true;
+  button.textContent = "Transcribing…";
+  clear(container);
+  container.append(h("p", { class: "muted", text: "Transcribing…" }));
+  try {
+    const data = await apiPost("/api/radio/transcribe", { audio_url: episode.audio_url });
+    clear(container);
+    const viewport = h("div", { class: "transcript-viewport" });
+    const paragraph = h("p", { class: "transcript-segment" });
+    for (const part of highlightSegments(data.text)) {
+      paragraph.append(part.mark ? h("mark", { text: part.text }) : part.text);
+    }
+    viewport.append(paragraph);
+    container.append(viewport);
+  } catch (error) {
+    clear(container);
+    container.append(h("p", { class: "error", text: error.message }));
+  } finally {
+    button.disabled = false;
+    button.textContent = "Transcript";
+  }
 }

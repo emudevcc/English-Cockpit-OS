@@ -55,3 +55,17 @@ class CardCreateRequest(BaseModel):
     ipa: str = Field(default="", max_length=200)
     register_tag: str = Field(default="", max_length=100)
     examples: list[str] = Field(default_factory=list)
+
+
+class Stats(BaseModel):
+    cards_due: int
+    cards_new: int
+    cards_total: int
+    reviews_today: int
+    streak_days: int
+    daily_goal: int = 20
+
+
+class SrsExport(BaseModel):
+    decks: list[DeckOut]
+    cards: list[CardOut]

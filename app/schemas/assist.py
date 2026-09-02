@@ -74,3 +74,26 @@ class ConnectorHighlight(BaseModel):
 class Transcript(BaseModel):
     text: str
     highlights: list[ConnectorHighlight] = Field(default_factory=list)
+
+
+class QuizRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=2000)
+
+
+class QuizItem(BaseModel):
+    question: str
+    correct_answer: str
+    distractors: list[str]
+
+
+class RegisterRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=2000)
+    register_tag: Literal["Executive", "Informal", "Technical"] = "Executive"
+
+
+class RegisterResult(BaseModel):
+    rewritten: str

@@ -8,15 +8,16 @@ is unit-tested with Node's built-in `node:test` (no dependencies).
 
 ```
 static/
-  css/cockpit.css             dark CSS Grid, a11y (focus-visible, aria-live)
+  css/cockpit.css             Apple-inspired dark theme + Kindle serif reading + a11y
   js/main.js                  boot: WS client + event bus + module mount + focus/hints
   js/ws_client.js             auto-reconnecting WebSocket (backoff 1s→15s, binary-capable)
   js/lib/                     pure, testable logic
     api.js backoff.js bus.js text.js timer.js speech.js connectors.js highlight.js
-    srs.js audio.js word_extract.js pronounce.js dom.js
+    srs.js audio.js word_extract.js pronounce.js shadow.js dom.js
   js/components/              one DOM module per feature
-    word_of_day news podcast radio srs_deck prep_drill declutter voice speech_coach dictionary
-templates/index.html         9 <section data-module> cards
+    word_of_day news podcast radio srs_deck prep_drill declutter voice speech_coach
+    dictionary shadowing register stats
+templates/index.html         11 <section data-module> cards
 ```
 
 ## Boot sequence (`main.js`)
@@ -62,16 +63,30 @@ templates/index.html         9 <section data-module> cards
 
 | Component | Interaction |
 |---|---|
-| `word_of_day` | render + 🔊 pronounce + "Add to review" (POST `/api/srs/cards`) |
-| `news` | headlines + vocab; auto-refresh every 30 min; retry on error |
-| `podcast` | brief + key terms + audio player with 1×/1.25× rate controls |
+| `word_of_day` | render + 🔊 pronounce + "Add to review" + ‹ Prev / Next › archive |
+| `news` | headlines + vocab + per-headline "Quiz"; auto-refresh 30 min |
+| `podcast` | brief + key terms + player (1×/1.25×) + "Transcript" |
 | `radio` | station select + player + live caption/transcript + Pause/Clear |
-| `srs_deck` | Space flip, 1–4 grade (scoped away from form fields), 🔊 pronounce |
-| `prep_drill` | 90 s countdown, auto-submit at 0, feedback + "Run again" |
+| `srs_deck` | new+due queue (New/Review badge), Space flip, 1–4 grade, 🔊, Export |
+| `prep_drill` | 90 s countdown, auto-submit, feedback + "Run again" |
 | `declutter` | paste → polish → word-count/verb/tone + "Copy revised" |
-| `voice` | hold-to-talk (mouse/touch/Space-Enter) → roleplay turn → TTS playback |
-| `speech_coach` | live WPM + filler-count HUD from `SpeechRecognition` interim results |
-| `dictionary` | global click-any-word popover |
+| `voice` | hold-to-talk → roleplay turn → TTS playback |
+| `speech_coach` | live WPM + pace + fillers/min + cadence HUD + session summary |
+| `shadowing` | 🔊 play → 🎤 repeat → word-level accuracy diff |
+| `register` | rewrite a sentence as Executive/Informal/Technical |
+| `dictionary` | global click-any-word popover (pronounce + add-to-review) |
+| `stats` | header greeting + 🔥 streak + daily-goal progress ring |
+
+## Design language
+
+- **Apple-inspired**: near-black `#000` canvas, `#1c1c1e` cards, Apple system colors
+  (`#0a84ff` accent), 16 px radii, layered soft shadows, pill buttons, hairline borders,
+  and a subtle top light-catch on cards.
+- **Kindle-inspired reading**: a serif stack (Georgia/Iowan) for definitions, examples,
+  briefs, transcript captions, and shadowing sentences.
+- **Habit-forming**: the header shows a time-of-day greeting, the 🔥 streak, and an
+  Apple-Watch-style daily-goal ring (`reviews_today / daily_review_goal`), refreshed
+  every minute.
 
 ## Performance notes
 
@@ -85,7 +100,7 @@ templates/index.html         9 <section data-module> cards
 ## Testing
 
 ```bash
-npm test            # node --test tests/frontend/  (40 tests)
+npm test            # node --test tests/frontend/  (47 tests)
 ```
 
 Pure logic in `lib/` is covered; DOM components are syntax-checked (`node --check`)

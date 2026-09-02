@@ -1,4 +1,4 @@
-// Word & Idiom of the Day.
+// Word & Idiom of the Day (with archive navigation).
 
 import { apiGet, apiPost } from "../lib/api.js";
 import { clear, h } from "../lib/dom.js";
@@ -10,13 +10,26 @@ const REFRESH_MS = 30 * 60 * 1000;
  * @param {HTMLElement} slot
  */
 export function init(slot) {
+  let currentDate = null; // null = today
+
+  const prevBtn = h("button", { type: "button", class: "chip", text: "‹ Prev", onclick: () => shiftDay(-1) });
+  const nextBtn = h("button", { type: "button", class: "chip", text: "Next ›", onclick: () => shiftDay(1) });
+
   async function load() {
     try {
-      const data = await apiGet("/api/word-of-day");
+      const url = currentDate ? `/api/word-of-day?date=${currentDate}` : "/api/word-of-day";
+      const data = await apiGet(url);
       render(data);
     } catch (error) {
       renderError(error);
     }
+  }
+
+  function shiftDay(delta) {
+    const base = currentDate ? new Date(`${currentDate}T00:00:00`) : new Date();
+    base.setDate(base.getDate() + delta);
+    currentDate = toDateStr(base);
+    load();
   }
 
   function render(data) {
@@ -43,6 +56,7 @@ export function init(slot) {
         data.examples.map((example) => h("li", { text: example })),
       ),
       h("div", { class: "chips" }, addBtn),
+      h("div", { class: "chips" }, prevBtn, nextBtn),
     );
   }
 
@@ -72,4 +86,11 @@ export function init(slot) {
 
   load();
   setInterval(load, REFRESH_MS);
+}
+
+function toDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }

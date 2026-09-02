@@ -33,6 +33,40 @@ export function wordsPerMinute(wordCount, elapsedSec) {
   return Math.round(wordCount / (elapsedSec / 60));
 }
 
+/**
+ * Fillers per minute.
+ * @param {number} fillers
+ * @param {number} elapsedSec
+ * @returns {number}
+ */
+export function fillerRate(fillers, elapsedSec) {
+  if (elapsedSec <= 0) return 0;
+  return Math.round(fillers / (elapsedSec / 60));
+}
+
+/**
+ * Qualitative pace label from words per minute.
+ * @param {number} wpm
+ * @returns {"slow" | "on-target" | "fast"}
+ */
+export function paceLabel(wpm) {
+  if (wpm < 110) return "slow";
+  if (wpm <= 160) return "on-target";
+  return "fast";
+}
+
+/**
+ * Qualitative cadence label from average words per utterance.
+ * @param {number} wordsPerUtterance
+ * @returns {string}
+ */
+export function cadenceLabel(wordsPerUtterance) {
+  if (wordsPerUtterance <= 0) return "—";
+  if (wordsPerUtterance < 5) return "choppy";
+  if (wordsPerUtterance <= 18) return "flowing";
+  return "run-on";
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

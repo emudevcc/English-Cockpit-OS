@@ -61,6 +61,9 @@ Key points:
 - All persisted timestamps use one canonical format — `YYYY-MM-DDTHH:MM:SSZ`
   (`app/core/timeutil.py`) — matching the SQLite `strftime` defaults so lexicographic
   `due_at` comparisons are correct.
+- Schema changes are versioned via `PRAGMA user_version`: the baseline schema is
+  version 1, and future migrations are appended to the `MIGRATIONS` tuple in
+  `app/core/db.py` and applied in order on startup.
 
 ### Schema
 

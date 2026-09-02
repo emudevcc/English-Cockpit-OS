@@ -41,6 +41,8 @@ at startup. Copy `deploy/env.example` and fill in the keys.
 | `DICTIONARY_CACHE_TTL_SECONDS` | `86400` | dictionary cache TTL |
 | `CORS_ORIGINS` | `[]` | JSON list; empty = same-origin only |
 | `WS_MAX_CONNECTIONS` | `100` | WebSocket cap |
+| `NEW_CARDS_PER_DAY` | `10` | new SRS cards introduced per session |
+| `DAILY_REVIEW_GOAL` | `20` | daily review goal for the header ring |
 | `HOST` / `PORT` | `127.0.0.1` / `8000` | bind address/port |
 
 Feed URLs (news/podcast/radio stations) are code constants in
@@ -122,5 +124,5 @@ Caddy listens on `:8080` and proxies to `127.0.0.1:8000`.
   `live STT started/stopped` and audio-chunk counts).
 - **Database**: `data/cockpit.db` (WAL); it is excluded from deploys so SRS progress
   survives updates.
-- **Feed drift**: BBC/Reuters/NPR feed URLs are the most likely thing to break over
+- **Feed drift**: BBC/The Guardian/NPR feed URLs are the most likely thing to break over
   time — they're constants in the service modules (edit + redeploy).

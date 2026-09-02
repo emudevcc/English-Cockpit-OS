@@ -12,16 +12,16 @@ def test_list_decks_returns_seeded_deck(client_factory: ClientFactory) -> None:
         data = response.json()
         assert len(data) == 1
         assert data[0]["slug"] == "workplace"
-        assert data[0]["due_count"] > 0
+        assert data[0]["due_count"] == 0
 
 
-def test_due_cards_and_review_flow(client_factory: ClientFactory) -> None:
+def test_new_cards_and_review_flow(client_factory: ClientFactory) -> None:
     with client_factory() as client:
         deck_id = client.get("/api/srs/decks").json()[0]["id"]
-        due = client.get(f"/api/srs/decks/{deck_id}/due").json()
-        assert due
+        new_cards = client.get(f"/api/srs/decks/{deck_id}/new").json()
+        assert new_cards
 
-        response = client.post("/api/srs/review", json={"card_id": due[0]["id"], "grade": 3})
+        response = client.post("/api/srs/review", json={"card_id": new_cards[0]["id"], "grade": 3})
         assert response.status_code == 200
         body = response.json()
         assert body["interval_days"] == 1
@@ -45,3 +45,22 @@ def test_create_card_endpoint(client_factory: ClientFactory) -> None:
         response = client.post("/api/srs/cards", json={"front": "hello", "back": "hola"})
         assert response.status_code == 201
         assert response.json()["front"] == "hello"
+
+
+def test_stats_endpoint(client_factory: ClientFactory) -> None:
+    with client_factory() as client:
+        response = client.get("/api/srs/stats")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["cards_total"] == 12
+        assert data["cards_new"] == 12
+        assert data["cards_due"] == 0
+
+
+def test_export_endpoint(client_factory: ClientFactory) -> None:
+    with client_factory() as client:
+        response = client.get("/api/srs/export")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["decks"]) == 1
+        assert len(data["cards"]) == 12

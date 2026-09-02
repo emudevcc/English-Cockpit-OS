@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
+from typing import Any
 
 import httpx
 from fastapi import FastAPI, Request
@@ -47,7 +48,9 @@ from app.services.llm import (
 from app.services.news import NewsService
 from app.services.podcast import PodcastService
 from app.services.prep import PrepService
+from app.services.quiz import QuizService
 from app.services.radio import RadioService
+from app.services.register import RegisterService
 from app.services.srs import SrsService
 from app.services.srs_seed import seed_default_deck
 from app.services.voice import VoiceService
@@ -131,6 +134,8 @@ def create_app(
     app.state.prep = PrepService(llm)
     app.state.declutter = DeclutterService(llm)
     app.state.voice = VoiceService(llm)
+    app.state.quiz = QuizService(llm)
+    app.state.register = RegisterService(llm)
     app.state.radio = RadioService(deepgram)
     app.state.dictionary = DictionaryService(llm, ttl_seconds=settings.dictionary_cache_ttl_seconds)
     app.state.rate_limiter = RateLimiter(settings.rate_limit_per_minute, 60.0)
@@ -157,14 +162,54 @@ def create_app(
     app.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
 
     @app.get("/healthz", tags=["system"])
-    async def healthz() -> dict[str, str]:
-        return {"status": "ok", "app": settings.app_name}
+    async def healthz() -> dict[str, Any]:
+        return {
+            "status": "ok",
+            "app": settings.app_name,
+            "llm_configured": bool(settings.llm_api_key),
+            "deepgram_configured": bool(settings.deepgram_api_key),
+        }
+
+    @app.get("/healthz/external", tags=["system"])
+    async def healthz_external() -> dict[str, str]:
+        return {
+            "llm": await _probe_llm(settings, http_client),
+            "deepgram": await _probe_deepgram(settings, http_client),
+        }
 
     @app.get("/", include_in_schema=False)
     async def index() -> FileResponse:
         return FileResponse(settings.templates_dir / "index.html")
 
     return app
+
+
+async def _probe_llm(settings: Any, client: httpx.AsyncClient) -> str:
+    if not settings.llm_api_key:
+        return "unconfigured"
+    try:
+        response = await client.get(
+            f"{settings.llm_base_url.rstrip('/')}/models",
+            headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+            timeout=10.0,
+        )
+        return "ok" if response.status_code == 200 else f"error {response.status_code}"
+    except Exception:
+        return "error"
+
+
+async def _probe_deepgram(settings: Any, client: httpx.AsyncClient) -> str:
+    if not settings.deepgram_api_key:
+        return "unconfigured"
+    try:
+        response = await client.get(
+            "https://api.deepgram.com/v1/projects",
+            headers={"Authorization": f"Token {settings.deepgram_api_key}"},
+            timeout=10.0,
+        )
+        return "ok" if response.status_code == 200 else f"error {response.status_code}"
+    except Exception:
+        return "error"
 
 
 def _register_exception_handlers(app: FastAPI) -> None:

@@ -7,11 +7,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, Request
 
-from app.schemas.content import DictionaryLookup, NewsPulse, PodcastDigest, WordOfDay
+from app.schemas.content import (
+    DictionaryLookup,
+    NewsPulse,
+    PodcastDigest,
+    WordEntry,
+    WordOfDay,
+)
 from app.services.dictionary import DictionaryService
 from app.services.news import NewsService
 from app.services.podcast import PodcastService
-from app.services.word_of_day import entry_for_date
+from app.services.word_of_day import entry_for_date, list_entries
 
 router = APIRouter(prefix="/api", tags=["content"])
 
@@ -21,6 +27,11 @@ async def word_of_day(
     day: Annotated[date | None, Query(alias="date")] = None,
 ) -> WordOfDay:
     return entry_for_date(day or date.today())
+
+
+@router.get("/word-of-day/entries", response_model=list[WordEntry])
+async def word_of_day_entries() -> list[WordEntry]:
+    return list_entries()
 
 
 @router.get("/news", response_model=NewsPulse)

@@ -7,13 +7,21 @@ a single serialized transaction so card state and review history stay atomic.
 from __future__ import annotations
 
 import json
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import aiosqlite
 
 from app.core.db import Database
 from app.core.timeutil import iso_utc, utc_now
-from app.schemas.srs import CardCreateRequest, CardOut, DeckOut, ReviewRequest, ReviewResponse
+from app.schemas.srs import (
+    CardCreateRequest,
+    CardOut,
+    DeckOut,
+    ReviewRequest,
+    ReviewResponse,
+    SrsExport,
+    Stats,
+)
 from app.services.srs_engine import next_repetition
 
 
@@ -44,10 +52,21 @@ class SrsService:
         return decks
 
     async def due_cards(self, deck_id: int, limit: int = 20) -> list[CardOut]:
+        """Return review cards (already seen at least once) that are due."""
         now = iso_utc(utc_now())
         cursor = await self._db.connection.execute(
-            "SELECT * FROM cards WHERE deck_id = ? AND due_at <= ? ORDER BY due_at ASC LIMIT ?",
+            "SELECT * FROM cards WHERE deck_id = ? AND repetitions > 0 AND due_at <= ? "
+            "ORDER BY due_at ASC LIMIT ?",
             (deck_id, now, limit),
+        )
+        rows = await cursor.fetchall()
+        return [_card_out(row) for row in rows]
+
+    async def new_cards(self, deck_id: int, limit: int = 10) -> list[CardOut]:
+        """Return unseen cards (never reviewed) up to ``limit`` for introduction."""
+        cursor = await self._db.connection.execute(
+            "SELECT * FROM cards WHERE deck_id = ? AND repetitions = 0 ORDER BY id LIMIT ?",
+            (deck_id, limit),
         )
         rows = await cursor.fetchall()
         return [_card_out(row) for row in rows]
@@ -150,6 +169,56 @@ class SrsService:
             raise SrsError("Failed to create card")
         return card
 
+    async def export(self) -> SrsExport:
+        decks = await self.list_decks()
+        cursor = await self._db.connection.execute("SELECT * FROM cards ORDER BY id")
+        cards = [_card_out(row) for row in await cursor.fetchall()]
+        return SrsExport(decks=decks, cards=cards)
+
+    async def stats(self) -> Stats:
+        now_iso = iso_utc(utc_now())
+        day_start = iso_utc(datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0))
+
+        total = await self._count("SELECT COUNT(*) AS n FROM cards")
+        new = await self._count("SELECT COUNT(*) AS n FROM cards WHERE repetitions = 0")
+        due = await self._count(
+            "SELECT COUNT(*) AS n FROM cards WHERE repetitions > 0 AND due_at <= ?",
+            (now_iso,),
+        )
+        reviews_today = await self._count(
+            "SELECT COUNT(*) AS n FROM reviews WHERE reviewed_at >= ?",
+            (day_start,),
+        )
+
+        return Stats(
+            cards_due=due,
+            cards_new=new,
+            cards_total=total,
+            reviews_today=reviews_today,
+            streak_days=await self._streak_days(),
+        )
+
+    async def _count(self, sql: str, params: tuple[object, ...] = ()) -> int:
+        cursor = await self._db.connection.execute(sql, params)
+        row = await cursor.fetchone()
+        return int(row["n"]) if row is not None else 0
+
+    async def _streak_days(self) -> int:
+        cursor = await self._db.connection.execute(
+            "SELECT DISTINCT substr(reviewed_at, 1, 10) AS day FROM reviews"
+        )
+        days = {row["day"] for row in await cursor.fetchall()}
+
+        today = datetime.now(UTC).date()
+        if today.isoformat() not in days:
+            today -= timedelta(days=1)  # a not-yet-reviewed today doesn't break the streak
+
+        streak = 0
+        while today.isoformat() in days:
+            streak += 1
+            today -= timedelta(days=1)
+        return streak
+
     async def _default_deck_id(self) -> int | None:
         cursor = await self._db.connection.execute("SELECT id FROM decks ORDER BY id LIMIT 1")
         row = await cursor.fetchone()
@@ -158,7 +227,7 @@ class SrsService:
     async def _due_count(self, deck_id: int) -> int:
         now = iso_utc(utc_now())
         cursor = await self._db.connection.execute(
-            "SELECT COUNT(*) AS n FROM cards WHERE deck_id = ? AND due_at <= ?",
+            "SELECT COUNT(*) AS n FROM cards WHERE deck_id = ? AND repetitions > 0 AND due_at <= ?",
             (deck_id, now),
         )
         row = await cursor.fetchone()

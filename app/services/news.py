@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 NEWS_FEEDS: tuple[tuple[str, str], ...] = (
     ("BBC Technology", "http://feeds.bbci.co.uk/news/technology/rss.xml"),
     ("The Verge", "https://www.theverge.com/rss/index.xml"),
-    ("Reuters Technology", "https://feeds.reuters.com/reuters/technologyNews"),
+    ("The Guardian Technology", "https://www.theguardian.com/uk/technology/rss"),
 )
 
 _VOCAB_SYSTEM = (

@@ -17,7 +17,12 @@ and responses are validated with Pydantic. Error bodies are `{"detail": "..."}`.
 ## System
 
 ### `GET /healthz`
-Liveness probe. `{"status":"ok","app":"English Cockpit OS"}`
+Liveness probe + config flags:
+`{"status":"ok","app":"English Cockpit OS","llm_configured":true,"deepgram_configured":true}`
+
+### `GET /healthz/external`
+Live (free) reachability probe of Groq and Deepgram:
+`{"llm":"ok","deepgram":"ok"}` — each value is `ok`, `error <status>`, or `unconfigured`.
 
 ### `GET /`
 Serves the kiosk dashboard (`templates/index.html`).
@@ -34,7 +39,7 @@ Deterministic daily rotation from a curated list. Optional `?date=YYYY-MM-DD`.
 ```
 
 ### `GET /api/news`
-Three headlines (BBC / The Verge / Reuters) fetched from RSS concurrently; a
+Three headlines (BBC / The Verge / The Guardian) fetched from RSS concurrently; a
 failing feed is skipped. `vocab` is populated only when an LLM key is configured.
 
 ```json
@@ -51,6 +56,9 @@ fallback).
  "key_terms":[{"term":"…","definition":"…"}],
  "episodes":[{"title":"…","link":"…","published":"…","summary":"…","audio_url":"…"}]}
 ```
+
+### `GET /api/word-of-day/entries`
+The curated archive list: `[{"expression":"…","kind":"…","register_tag":"…"}, …]`.
 
 ### `GET /api/dictionary/lookup?word=<word>`
 Click-to-translate lookup (LLM, cached 24 h).
@@ -71,7 +79,19 @@ Returns the list of discourse connectors used for transcript highlighting.
 ```
 
 ### `GET /api/srs/decks/{deck_id}/due?limit=20`
-Cards whose `due_at` has passed, ordered oldest-first.
+Review cards (`repetitions > 0`) whose `due_at` has passed, ordered oldest-first.
+
+### `GET /api/srs/decks/{deck_id}/new?limit=`
+Unseen cards (`repetitions = 0`) to introduce, up to the limit (defaults to
+`NEW_CARDS_PER_DAY`).
+
+### `GET /api/srs/stats`
+```json
+{"cards_due":0,"cards_new":12,"cards_total":12,"reviews_today":0,"streak_days":0,"daily_goal":20}
+```
+
+### `GET /api/srs/export`
+JSON backup of decks + cards: `{"decks":[…],"cards":[…]}`.
 
 ### `POST /api/srs/review`
 Grade a card (1–4). Applies SM-2 atomically and records review history.
@@ -119,6 +139,21 @@ Roleplay partner turn (LLM). Request `{"scenario":"…","user_says":"…","histo
 
 ```json
 {"partner_says":"…","follow_up_hint":"…"}
+```
+
+### `POST /api/quiz`
+Generate a multiple-choice comprehension question (LLM). Request `{"text":"…"}`.
+
+```json
+{"question":"…","correct_answer":"…","distractors":["…","…","…"]}
+```
+
+### `POST /api/register/rewrite`
+Rewrite a sentence in a target register (LLM). Request
+`{"text":"…","register_tag":"Executive"}` (`Executive`/`Informal`/`Technical`).
+
+```json
+{"rewritten":"…"}
 ```
 
 ### `GET /api/radio/stations`

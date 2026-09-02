@@ -10,6 +10,7 @@
   <body>
     <header class="cockpit-header">
       <h1 class="cockpit-title">English Cockpit OS</h1>
+      <div class="cockpit-stats" id="cockpit-stats" aria-label="Progress"></div>
       <span
         id="ws-status"
         class="cockpit-status"
@@ -64,6 +65,16 @@
 
       <section class="cockpit-card" data-module="speech" aria-labelledby="speech-title">
         <h2 class="card-title" id="speech-title">Speech-Metrics Coach</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="shadowing" aria-labelledby="shadowing-title">
+        <h2 class="card-title" id="shadowing-title">Shadowing Practice</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="register" aria-labelledby="register-title">
+        <h2 class="card-title" id="register-title">Register Swap</h2>
         <div class="card-body" data-slot></div>
       </section>
     </main>

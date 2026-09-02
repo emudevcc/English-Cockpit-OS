@@ -9,8 +9,11 @@ import * as news from "./components/news.js";
 import * as podcast from "./components/podcast.js";
 import * as prepDrill from "./components/prep_drill.js";
 import * as radio from "./components/radio.js";
+import * as register from "./components/register.js";
+import * as shadowing from "./components/shadowing.js";
 import * as speechCoach from "./components/speech_coach.js";
 import * as srsDeck from "./components/srs_deck.js";
+import * as stats from "./components/stats.js";
 import * as voice from "./components/voice.js";
 import * as wordOfDay from "./components/word_of_day.js";
 
@@ -24,6 +27,8 @@ const MODULES = {
   declutter,
   voice,
   speech: speechCoach,
+  shadowing,
+  register,
 };
 
 function boot() {
@@ -53,6 +58,7 @@ function boot() {
   }
 
   dictionary.init();
+  stats.init(document.getElementById("cockpit-stats"));
   setupFocusMode();
   setupHints();
 }

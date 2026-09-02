@@ -18,6 +18,7 @@ export function init(slot) {
   const controlsEl = h("div", { class: "srs-controls" });
   const progressEl = h("p", { class: "muted" });
   const statusEl = h("p", { class: "srs-status", "aria-live": "polite" });
+  const exportBtn = h("button", { type: "button", class: "chip", text: "Export", onclick: exportData });
 
   function render() {
     clear(cardEl);
@@ -31,6 +32,7 @@ export function init(slot) {
         { class: "srs-front-row" },
         h("p", { class: "srs-front", text: card.front }),
         pronounceButton(card.front),
+        h("span", { class: "tag", text: card.repetitions === 0 ? "New" : "Review" }),
       ),
       flipped
         ? h(
@@ -74,7 +76,7 @@ export function init(slot) {
         clear(cardEl);
         clear(controlsEl);
         progressEl.textContent = "";
-        cardEl.append(h("p", { class: "muted", text: "All caught up — no cards due right now." }));
+        cardEl.append(h("p", { class: "muted", text: "All caught up — no cards to study right now." }));
       }
     } catch (error) {
       statusEl.textContent = error.message;
@@ -96,6 +98,21 @@ export function init(slot) {
     }
   }
 
+  async function exportData() {
+    try {
+      const data = await apiGet("/api/srs/export");
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = h("a", { href: url, download: "cockpit-srs-export.json" });
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      statusEl.textContent = error.message;
+    }
+  }
+
   async function load() {
     try {
       const decks = await apiGet("/api/srs/decks");
@@ -104,16 +121,22 @@ export function init(slot) {
         slot.append(h("p", { class: "muted", text: "No decks yet." }));
         return;
       }
-      cards = await apiGet(`/api/srs/decks/${decks[0].id}/due`);
+      const deckId = decks[0].id;
+      const [newCards, dueCards] = await Promise.all([
+        apiGet(`/api/srs/decks/${deckId}/new`),
+        apiGet(`/api/srs/decks/${deckId}/due`),
+      ]);
+      cards = [...newCards, ...dueCards];
       slot.append(
         cardEl,
         controlsEl,
         progressEl,
         statusEl,
         h("p", { class: "muted", text: "Space to flip · 1–4 to grade" }),
+        h("div", { class: "chips" }, exportBtn),
       );
       if (cards.length) render();
-      else cardEl.append(h("p", { class: "muted", text: "All caught up — no cards due right now." }));
+      else cardEl.append(h("p", { class: "muted", text: "All caught up — no cards to study right now." }));
     } catch (error) {
       clear(slot);
       slot.append(h("p", { class: "error", text: `SRS unavailable: ${error.message}` }));

@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, Request, status
 
-from app.schemas.srs import CardCreateRequest, CardOut, DeckOut, ReviewRequest, ReviewResponse
+from app.schemas.srs import (
+    CardCreateRequest,
+    CardOut,
+    DeckOut,
+    ReviewRequest,
+    ReviewResponse,
+    SrsExport,
+    Stats,
+)
 from app.services.srs import SrsError, SrsService
 
 router = APIRouter(prefix="/api/srs", tags=["srs"])
@@ -24,6 +32,31 @@ async def due_cards(
 ) -> list[CardOut]:
     service: SrsService = request.app.state.srs
     return await service.due_cards(deck_id, limit)
+
+
+@router.get("/decks/{deck_id}/new", response_model=list[CardOut])
+async def new_cards(
+    deck_id: int,
+    request: Request,
+    limit: int | None = Query(default=None, ge=1, le=100),
+) -> list[CardOut]:
+    service: SrsService = request.app.state.srs
+    cap = limit or request.app.state.settings.new_cards_per_day
+    return await service.new_cards(deck_id, cap)
+
+
+@router.get("/stats", response_model=Stats)
+async def stats(request: Request) -> Stats:
+    service: SrsService = request.app.state.srs
+    data = await service.stats()
+    data.daily_goal = request.app.state.settings.daily_review_goal
+    return data
+
+
+@router.get("/export", response_model=SrsExport)
+async def export(request: Request) -> SrsExport:
+    service: SrsService = request.app.state.srs
+    return await service.export()
 
 
 @router.post("/review", response_model=ReviewResponse)

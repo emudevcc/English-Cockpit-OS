@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-from app.schemas.content import WordOfDay
+from app.schemas.content import WordEntry, WordOfDay
 
 Kind = Literal["idiom", "phrasal_verb", "collocation"]
 
@@ -251,6 +251,18 @@ _ENTRIES: tuple[_Entry, ...] = (
 
 
 ENTRY_COUNT: int = len(_ENTRIES)
+
+
+def list_entries() -> list[WordEntry]:
+    """Return all curated entries for browsing the archive."""
+    return [
+        WordEntry(
+            expression=entry.expression,
+            kind=entry.kind,
+            register_tag=entry.register_tag,
+        )
+        for entry in _ENTRIES
+    ]
 
 
 def entry_for_date(day: date) -> WordOfDay:

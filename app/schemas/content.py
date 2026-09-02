@@ -35,6 +35,12 @@ class WordOfDay(BaseModel):
     examples: list[str]
 
 
+class WordEntry(BaseModel):
+    expression: str
+    kind: str
+    register_tag: str
+
+
 class PodcastEpisode(BaseModel):
     title: str
     link: str

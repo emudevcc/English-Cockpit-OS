@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     content_cache_ttl_seconds: float = Field(default=600.0, gt=0.0)
     dictionary_cache_ttl_seconds: float = Field(default=86400.0, gt=0.0)
     rate_limit_per_minute: int = Field(default=30, ge=1)
+    new_cards_per_day: int = Field(default=10, ge=1)
+    daily_review_goal: int = Field(default=20, ge=1)
 
     llm_api_key: str = Field(default="", validation_alias="LLM_API_KEY")
     llm_base_url: str = Field(

@@ -46,35 +46,46 @@ app/
     rss.py                 feed fetch/parse (offloaded to a thread)
     news.py, podcast.py    content pipelines (cached, graceful degrade)
     prep.py, declutter.py, voice.py, radio.py, connectors.py
+    dictionary.py          click-to-translate lookup (cached)
+    quiz.py, register.py   comprehension quiz + register rewrite
 static/
   css/cockpit.css          dark-mode CSS Grid, accessible
   js/main.js               boots WS + event bus + modules
   js/ws_client.js          auto-reconnecting WebSocket client (1s→15s backoff)
-  js/lib/*.js              pure logic (unit-tested with node:test)
-  js/components/*.js       one module per dashboard feature
+  js/lib/*.js              pure logic: timer, speech, srs, text, connectors, highlight, shadow, word_extract, audio, pronounce, api, bus, backoff, dom
+  js/components/*.js       one module per feature (word_of_day, news, podcast, radio, srs_deck, prep_drill, declutter, voice, speech_coach, dictionary, shadowing, register, stats)
 templates/index.html       kiosk dashboard shell
 deploy/Caddyfile           optional LAN exposure with basic auth
-tests/backend              pytest (112 tests)
-tests/frontend             node:test (34 tests)
+tests/backend              pytest (132 tests)
+tests/frontend             node:test (47 tests)
 ```
 
 ## API
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/healthz` | liveness |
+| GET | `/healthz` | liveness + `llm_configured`/`deepgram_configured` |
+| GET | `/healthz/external` | live Groq/Deepgram reachability probe |
 | WS  | `/ws` | heartbeat (`ping`/`pong`) + broadcast bus |
 | WS  | `/ws/radio` | live STT relay (browser PCM upload → Deepgram) |
 | GET | `/api/word-of-day` | deterministic daily rotation (`?date=` optional) |
+| GET | `/api/word-of-day/entries` | curated archive list |
 | GET | `/api/news` | 3 headlines + vocab (LLM vocab when key set) |
 | GET | `/api/podcast-digest` | brief + key terms + episode audio |
+| GET | `/api/dictionary/lookup?word=` | click-to-translate (cached 24 h) |
 | GET | `/api/srs/decks` | decks with due counts |
-| GET | `/api/srs/decks/{id}/due` | due cards |
+| GET | `/api/srs/decks/{id}/due` | review cards due (seen before) |
+| GET | `/api/srs/decks/{id}/new` | unseen cards (introduce up to `new_cards_per_day`) |
+| POST | `/api/srs/cards` | add a card |
 | POST | `/api/srs/review` | grade a card (`{card_id, grade: 1..4}`) |
+| GET | `/api/srs/stats` | due/new/total/reviews-today/streak/daily-goal |
+| GET | `/api/srs/export` | JSON backup of decks + cards |
 | GET | `/api/prep/scenario` | random workplace scenario |
 | POST | `/api/prep/evaluate` | PREP feedback + BLUF rewrite |
 | POST | `/api/declutter` | word reduction + verb upgrades + tone |
 | POST | `/api/voice/turn` | roleplay partner turn |
+| POST | `/api/quiz` | comprehension MCQ from text |
+| POST | `/api/register/rewrite` | rewrite a sentence in a target register |
 | GET | `/api/radio/stations` | live stream URLs |
 | POST | `/api/radio/transcribe` | Deepgram transcript + connector highlights |
 | GET | `/api/speech/connectors` | discourse-connector list |
@@ -117,6 +128,8 @@ Create a `.env` (gitignored) next to the app. Values are read once at startup.
 | `LLM_DAILY_LIMIT` | `1000` | Max LLM calls per 24h (0 = unlimited). |
 | `DEEPGRAM_DAILY_LIMIT` | `200` | Max Deepgram calls per 24h (0 = unlimited). |
 | `WS_MAX_CONNECTIONS` | `100` | WebSocket connection cap. |
+| `NEW_CARDS_PER_DAY` | `10` | New SRS cards introduced per session. |
+| `DAILY_REVIEW_GOAL` | `20` | Daily review goal for the header ring. |
 
 Feed URLs are defined as constants in `app/services/news.py`, `podcast.py`, and
 `radio.py` — edit and redeploy to change them.
@@ -124,8 +137,8 @@ Feed URLs are defined as constants in `app/services/news.py`, `podcast.py`, and
 ## Tests
 
 ```bash
-.venv/bin/python -m pytest -q    # backend (112)
-npm test                          # frontend pure logic (34)
+.venv/bin/python -m pytest -q    # backend (132)
+npm test                          # frontend pure logic (47)
 ```
 
 ## Security
