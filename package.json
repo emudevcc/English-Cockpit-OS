@@ -1,0 +1,10 @@
+{
+  "name": "english-cockpit-os",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Frontend for English Cockpit OS (zero-framework, zero-build-step).",
+  "scripts": {
+    "test": "node --test tests/frontend/"
+  }
+}

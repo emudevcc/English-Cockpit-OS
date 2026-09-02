@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>English Cockpit OS</title>
+    <link rel="stylesheet" href="/static/css/cockpit.css" />
+  </head>
+  <body>
+    <header class="cockpit-header">
+      <h1 class="cockpit-title">English Cockpit OS</h1>
+      <span
+        id="ws-status"
+        class="cockpit-status"
+        data-state="offline"
+        role="status"
+        aria-live="polite"
+      >
+        offline
+      </span>
+    </header>
+
+    <main class="cockpit-grid" id="cockpit-grid" aria-label="Dashboard modules">
+      <section class="cockpit-card" data-module="word-of-day" aria-labelledby="wod-title">
+        <h2 class="card-title" id="wod-title">Word &amp; Idiom of the Day</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="news" aria-labelledby="news-title">
+        <h2 class="card-title" id="news-title">Tech &amp; Business News Pulse</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="podcast" aria-labelledby="podcast-title">
+        <h2 class="card-title" id="podcast-title">Daily Audio &amp; Podcast Digest</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="radio" aria-labelledby="radio-title">
+        <h2 class="card-title" id="radio-title">Live Radio &amp; Teleprompter</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="srs" aria-labelledby="srs-title">
+        <h2 class="card-title" id="srs-title">Spaced Repetition Flashcards</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="prep" aria-labelledby="prep-title">
+        <h2 class="card-title" id="prep-title">Rapid-Fire PREP Drill</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="declutter" aria-labelledby="declutter-title">
+        <h2 class="card-title" id="declutter-title">Executive De-Clutter</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="voice" aria-labelledby="voice-title">
+        <h2 class="card-title" id="voice-title">Voice Roleplay Partner</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+
+      <section class="cockpit-card" data-module="speech" aria-labelledby="speech-title">
+        <h2 class="card-title" id="speech-title">Speech-Metrics Coach</h2>
+        <div class="card-body" data-slot></div>
+      </section>
+    </main>
+
+    <script type="module" src="/static/js/main.js"></script>
+  </body>
+</html>
