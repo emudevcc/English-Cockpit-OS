@@ -90,7 +90,7 @@ async function transcribe(episode, container, button) {
   try {
     const data = await apiPost("/api/radio/transcribe", { audio_url: episode.audio_url });
     clear(container);
-    const viewport = h("div", { class: "transcript-viewport" });
+    const viewport = h("div", { class: "podcast-transcript" });
     const paragraph = h("p", { class: "transcript-segment" });
     for (const part of highlightSegments(data.text)) {
       paragraph.append(part.mark ? h("mark", { text: part.text }) : part.text);

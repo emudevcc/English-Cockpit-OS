@@ -343,6 +343,15 @@ audio {
 .transcript-segment {
   margin: 0;
 }
+
+.podcast-transcript {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  padding: 0.7rem;
+}
 mark {
   background: rgba(10, 132, 255, 0.22);
   color: #8ab4ff;
@@ -634,6 +643,17 @@ input:focus-visible,
 }
 
 /* Quiz */
+.quiz {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.2rem;
+}
+.quiz button {
+  border-radius: var(--radius-sm);
+  text-align: left;
+  width: 100%;
+}
 .quiz-question {
   font-weight: 600;
   margin: 0.3rem 0;
@@ -677,4 +697,23 @@ input:focus-visible,
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Always-visible, styled scrollbars (Chromium) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4d;
+  background-clip: padding-box;
 }

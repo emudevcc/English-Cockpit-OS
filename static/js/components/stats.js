@@ -1,25 +1,34 @@
-// Progress / streak strip (header) with a daily-review goal ring.
+// Progress / streak strip (header) with a daily-review goal ring and a
+// content-refresh countdown.
 
 import { apiGet } from "../lib/api.js";
 import { clear, h } from "../lib/dom.js";
 
-const REFRESH_MS = 60 * 1000;
+const STATS_REFRESH_MS = 60 * 1000;
+const CONTENT_REFRESH_MS = 30 * 60 * 1000;
 
 /**
  * @param {HTMLElement} el
  */
 export function init(el) {
+  const contentStart = Date.now();
+  const countdownEl = h("span", {
+    class: "stat",
+    title: "Content refresh (news / podcast / word-of-day)",
+  });
+
   async function load() {
     try {
       const s = await apiGet("/api/srs/stats");
+      clear(el);
       render(s);
+      el.append(countdownEl);
     } catch {
       clear(el);
     }
   }
 
   function render(s) {
-    clear(el);
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     const streak = s.streak_days ? ` · 🔥 ${s.streak_days}-day streak` : "";
@@ -34,8 +43,18 @@ export function init(el) {
     );
   }
 
+  function tick() {
+    const remaining = CONTENT_REFRESH_MS - ((Date.now() - contentStart) % CONTENT_REFRESH_MS);
+    const total = Math.max(0, Math.ceil(remaining / 1000));
+    const mm = String(Math.floor(total / 60)).padStart(2, "0");
+    const ss = String(total % 60).padStart(2, "0");
+    countdownEl.textContent = `⟳ ${mm}:${ss}`;
+  }
+
   load();
-  setInterval(load, REFRESH_MS);
+  tick();
+  setInterval(load, STATS_REFRESH_MS);
+  setInterval(tick, 1000);
 }
 
 function goalRing(pct, done, goal) {
