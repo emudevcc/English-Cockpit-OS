@@ -70,7 +70,7 @@ templates/index.html         13 <section data-module> cards
 | `srs_deck` | new+due queue (New/Review badge), Space flip, 1–4 grade, 🔊, Export |
 | `prep_drill` | 90 s countdown, auto-submit, feedback + "Run again" |
 | `grammar` | 7-tab hub: irregular verbs, phrasal verbs, collocations, use of English, word forms, rule of the day, grammar coach (each drill save-to-SRS) |
-| `declutter` | Writing Coach: Polish (word-count/verb/tone) + Correct (per-error explanations) tabs |
+| `declutter` | Writing Coach: Polish (word-count/verb/tone) + Correct (per-error explanations) actions |
 | `voice` | hold-to-talk → roleplay turn → TTS playback |
 | `speech_coach` | Live Metrics (WPM/pace/fillers/cadence HUD) + Monologue (record → LLM feedback) tabs |
 | `shadowing` | Pronunciation: Shadow / Minimal Pairs / Dictation tabs |
