@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from app.services.word_of_day import ENTRY_COUNT, entry_for_date
+from app.services.word_of_day import ENTRY_COUNT, entry_for_date, random_entry
 
 
 def test_same_date_returns_same_entry() -> None:
@@ -31,3 +31,13 @@ def test_every_entry_is_valid() -> None:
         assert entry.definition
         assert len(entry.examples) == 2
         assert entry.kind in {"idiom", "phrasal_verb", "collocation"}
+
+
+def test_random_entry_is_valid() -> None:
+    entry = random_entry()
+    assert entry.expression
+    assert entry.ipa.startswith("/")
+    assert entry.register_tag
+    assert entry.definition
+    assert len(entry.examples) == 2
+    assert entry.kind in {"idiom", "phrasal_verb", "collocation"}

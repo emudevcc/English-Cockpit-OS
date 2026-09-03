@@ -1,66 +1,67 @@
-// Daily Audio & Podcast Digest (Morning Brief) with playback-rate controls.
+// Daily Audio & Podcast Digest (Morning Brief) with an episode list.
 
 import { apiGet, apiPost } from "../lib/api.js";
 import { clear, h } from "../lib/dom.js";
 import { highlightSegments } from "../lib/highlight.js";
 
-const REFRESH_MS = 30 * 60 * 1000;
-
 /**
  * @param {HTMLElement} slot
+ * @param {{bus?: {on: Function}}} [ctx]
  */
-export function init(slot) {
-  async function load() {
+export function init(slot, ctx) {
+  async function load(fresh = false) {
     try {
-      const data = await apiGet("/api/podcast-digest");
+      const data = await apiGet(fresh ? "/api/podcast-digest?refresh=true" : "/api/podcast-digest");
       clear(slot);
-      slot.append(h("h3", { class: "subtitle", text: data.title }));
-
-      const brief = h("div", { class: "brief" });
-      for (const paragraph of data.brief) brief.append(h("p", { text: paragraph }));
-      slot.append(brief);
-
-      if (data.key_terms.length) {
-        const terms = h("ul", { class: "vocab-list" });
-        for (const term of data.key_terms) {
-          terms.append(
-            h("li", { class: "vocab-term" }, h("strong", { text: term.term }), ` — ${term.definition}`),
-          );
-        }
-        slot.append(terms);
-      }
-
-      const firstEpisode = data.episodes.find((episode) => episode.audio_url);
-      if (firstEpisode) {
-        slot.append(buildPlayer(firstEpisode));
-        slot.append(buildTranscript(firstEpisode));
-      }
+      render(data);
     } catch (error) {
       renderError(error);
     }
+  }
+
+  function render(data) {
+    slot.append(h("h3", { class: "subtitle", text: data.title }));
+
+    const brief = h("div", { class: "brief" });
+    for (const paragraph of data.brief) brief.append(h("p", { text: paragraph }));
+    slot.append(brief);
+
+    if (data.key_terms.length) {
+      const terms = h("ul", { class: "vocab-list" });
+      for (const term of data.key_terms) {
+        terms.append(
+          h("li", { class: "vocab-term" }, h("strong", { text: term.term }), ` — ${term.definition}`),
+        );
+      }
+      slot.append(terms);
+    }
+
+    if (data.episodes.length) slot.append(buildEpisodes(data.episodes));
   }
 
   function renderError(error) {
     clear(slot);
     slot.append(
       h("p", { class: "error", text: `Digest unavailable: ${error.message}` }),
-      h("button", { type: "button", class: "chip", text: "Retry", onclick: load }),
+      h("button", { type: "button", class: "chip", text: "Retry", onclick: () => load(true) }),
     );
   }
 
   load();
-  setInterval(load, REFRESH_MS);
+  ctx?.bus?.on("content:refresh", () => load(true));
 }
 
-function buildPlayer(episode) {
-  const audio = h("audio", { controls: true, src: episode.audio_url });
+function buildEpisodes(episodes) {
+  const audio = h("audio", { controls: true, preload: "none" });
+  const nowPlaying = h("p", { class: "muted", text: "Select an episode to play" });
+
   const setRate = (rate) => () => {
     audio.playbackRate = rate;
   };
-  return h(
+  const player = h(
     "div",
     { class: "audio-player" },
-    h("p", { class: "muted", text: episode.title }),
+    nowPlaying,
     audio,
     h(
       "div",
@@ -69,20 +70,48 @@ function buildPlayer(episode) {
       h("button", { class: "chip", type: "button", onclick: setRate(1.25), text: "1.25×" }),
     ),
   );
-}
 
-function buildTranscript(episode) {
-  const container = h("div", { class: "podcast-transcript" });
-  const button = h("button", {
-    class: "chip",
-    type: "button",
-    text: "Transcript",
-    onclick: () => transcribe(episode, container, button),
-  });
-  return h("div", { class: "chips" }, button, container);
+  const transcriptBox = h("div", { class: "podcast-transcript" });
+  const list = h("ul", { class: "episode-list" });
+  for (const episode of episodes) {
+    const playBtn = h("button", {
+      class: "chip",
+      type: "button",
+      text: "▶",
+      title: "Play",
+      onclick: () => play(episode),
+    });
+    const transcriptBtn = h("button", {
+      class: "chip",
+      type: "button",
+      text: "Transcript",
+      onclick: () => transcribe(episode, transcriptBox, transcriptBtn),
+    });
+    list.append(
+      h(
+        "li",
+        { class: "episode-item" },
+        h("span", { class: "episode-title", text: episode.title }),
+        h("div", { class: "chips" }, playBtn, transcriptBtn),
+      ),
+    );
+  }
+
+  function play(episode) {
+    if (!episode.audio_url) return;
+    nowPlaying.textContent = episode.title;
+    audio.src = episode.audio_url;
+    audio.play().catch(() => {});
+  }
+
+  return h("div", { class: "podcast-episodes" }, player, list, transcriptBox);
 }
 
 async function transcribe(episode, container, button) {
+  if (!episode.audio_url) {
+    container.append(h("p", { class: "error", text: "No audio available for this episode." }));
+    return;
+  }
   button.disabled = true;
   button.textContent = "Transcribing…";
   clear(container);
@@ -90,13 +119,11 @@ async function transcribe(episode, container, button) {
   try {
     const data = await apiPost("/api/radio/transcribe", { audio_url: episode.audio_url });
     clear(container);
-    const viewport = h("div", { class: "podcast-transcript" });
     const paragraph = h("p", { class: "transcript-segment" });
     for (const part of highlightSegments(data.text)) {
       paragraph.append(part.mark ? h("mark", { text: part.text }) : part.text);
     }
-    viewport.append(paragraph);
-    container.append(viewport);
+    container.append(paragraph);
   } catch (error) {
     clear(container);
     container.append(h("p", { class: "error", text: error.message }));

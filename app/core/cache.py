@@ -41,3 +41,7 @@ class TTLCache(Generic[T]):
 
         self._values[key] = (time.monotonic(), value)
         return value
+
+    def put(self, key: str, value: T) -> None:
+        """Store a freshly computed value (e.g. after a forced refresh)."""
+        self._values[key] = (time.monotonic(), value)

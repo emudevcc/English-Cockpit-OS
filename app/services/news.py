@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 
 import httpx
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -24,6 +25,9 @@ NEWS_FEEDS: tuple[tuple[str, str], ...] = (
     ("BBC Technology", "http://feeds.bbci.co.uk/news/technology/rss.xml"),
     ("The Verge", "https://www.theverge.com/rss/index.xml"),
     ("The Guardian Technology", "https://www.theguardian.com/uk/technology/rss"),
+    ("BBC Business", "http://feeds.bbci.co.uk/news/business/rss.xml"),
+    ("NPR News", "https://feeds.npr.org/1001/rss.xml"),
+    ("Ars Technica", "https://feeds.arstechnica.com/arstechnica/index"),
 )
 
 _VOCAB_SYSTEM = (
@@ -58,22 +62,32 @@ class NewsService:
         self._feeds = feeds
         self._cache = TTLCache[NewsPulse](ttl_seconds)
 
-    async def pulse(self) -> NewsPulse:
-        return await self._cache.get("news", self._fetch_pulse)
+    async def pulse(self, *, refresh: bool = False) -> NewsPulse:
+        if not refresh:
+            return await self._cache.get("news", self._fetch_pulse)
+        pulse = await self._fetch_pulse()
+        self._cache.put("news", pulse)
+        return pulse
 
     async def _fetch_pulse(self) -> NewsPulse:
         results = await asyncio.gather(
-            *(self._one_headline(name, url) for name, url in self._feeds),
+            *(fetch_feed(self._client, url, limit=3) for _, url in self._feeds),
             return_exceptions=True,
         )
-        headlines = [result for result in results if isinstance(result, Headline)]
-        return NewsPulse(headlines=headlines[:3])
+        items: list[tuple[str, FeedItem]] = []
+        for (name, _), result in zip(self._feeds, results, strict=True):
+            if isinstance(result, list):
+                for item in result:
+                    if item.title and item.link:
+                        items.append((name, item))
+        random.shuffle(items)
+        headlines = await asyncio.gather(
+            *(self._make_headline(name, item) for name, item in items[:5]),
+            return_exceptions=True,
+        )
+        return NewsPulse(headlines=[h for h in headlines if isinstance(h, Headline)])
 
-    async def _one_headline(self, name: str, url: str) -> Headline | None:
-        items = await fetch_feed(self._client, url, limit=3)
-        if not items:
-            return None
-        item: FeedItem = items[0]
+    async def _make_headline(self, name: str, item: FeedItem) -> Headline:
         vocab = await self._extract_vocab(item.title)
         return Headline(
             source=name,

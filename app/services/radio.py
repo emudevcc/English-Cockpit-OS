@@ -14,9 +14,15 @@ RADIO_STATIONS: tuple[RadioStation, ...] = (
         format="mp3",
     ),
     RadioStation(
-        id="bbc-radio-4",
-        name="BBC Radio 4",
-        stream_url="https://stream.live.vc.bbcmedia.co.uk/bbc_radio_fourfm",
+        id="bloomberg",
+        name="Bloomberg Radio",
+        stream_url="https://playerservices.streamtheworld.com/api/livestream-redirect/WBBRAMAAC.aac",
+        format="aac",
+    ),
+    RadioStation(
+        id="cspan",
+        name="C-SPAN Radio",
+        stream_url="https://playerservices.streamtheworld.com/api/livestream-redirect/CSPANRADIO.mp3",
         format="mp3",
     ),
 )

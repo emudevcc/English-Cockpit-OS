@@ -16,6 +16,15 @@ def test_word_of_day_endpoint(client_factory: ClientFactory) -> None:
         assert len(data["examples"]) == 2
 
 
+def test_word_of_day_random_endpoint(client_factory: ClientFactory) -> None:
+    with client_factory() as client:
+        response = client.get("/api/word-of-day/random")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["expression"]
+        assert len(data["examples"]) == 2
+
+
 def test_news_endpoint_returns_headlines_and_vocab(client_factory: ClientFactory) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(

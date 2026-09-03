@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import httpx
 
-from app.services.news import NewsService
+from app.services.news import NEWS_FEEDS, NewsService
 from tests.backend.helpers import FakeLLM, build_rss, make_mock_http
+
+
+def test_news_feeds_are_configured() -> None:
+    assert len(NEWS_FEEDS) >= 6
 
 
 async def test_pulse_returns_headline_with_vocab() -> None:
@@ -115,3 +119,23 @@ async def test_pulse_is_cached() -> None:
     await service.pulse()
 
     assert calls == 1
+
+
+async def test_pulse_refresh_bypasses_cache() -> None:
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(
+            200, text=build_rss([{"title": "Headline", "link": "https://e.com/1"}])
+        )
+
+    http = make_mock_http(handler)
+    llm = FakeLLM(enabled=False)
+    service = NewsService(http, llm, feeds=(("Test", "https://feed.example.com"),))
+
+    await service.pulse()
+    await service.pulse(refresh=True)
+
+    assert calls == 2

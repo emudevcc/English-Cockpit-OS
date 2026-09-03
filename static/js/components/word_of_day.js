@@ -4,12 +4,11 @@ import { apiGet, apiPost } from "../lib/api.js";
 import { clear, h } from "../lib/dom.js";
 import { pronounceButton } from "../lib/pronounce.js";
 
-const REFRESH_MS = 30 * 60 * 1000;
-
 /**
  * @param {HTMLElement} slot
+ * @param {{bus?: {on: Function}}} [ctx]
  */
-export function init(slot) {
+export function init(slot, ctx) {
   let currentDate = null; // null = today
 
   const prevBtn = h("button", { type: "button", class: "chip", text: "‹ Prev", onclick: () => shiftDay(-1) });
@@ -19,6 +18,15 @@ export function init(slot) {
     try {
       const url = currentDate ? `/api/word-of-day?date=${currentDate}` : "/api/word-of-day";
       const data = await apiGet(url);
+      render(data);
+    } catch (error) {
+      renderError(error);
+    }
+  }
+
+  async function loadRandom() {
+    try {
+      const data = await apiGet("/api/word-of-day/random");
       render(data);
     } catch (error) {
       renderError(error);
@@ -85,7 +93,7 @@ export function init(slot) {
   }
 
   load();
-  setInterval(load, REFRESH_MS);
+  ctx?.bus?.on("content:refresh", loadRandom);
 }
 
 function toDateStr(date) {

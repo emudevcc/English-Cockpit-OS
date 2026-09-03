@@ -17,7 +17,7 @@ from app.schemas.content import (
 from app.services.dictionary import DictionaryService
 from app.services.news import NewsService
 from app.services.podcast import PodcastService
-from app.services.word_of_day import entry_for_date, list_entries
+from app.services.word_of_day import entry_for_date, list_entries, random_entry
 
 router = APIRouter(prefix="/api", tags=["content"])
 
@@ -34,16 +34,27 @@ async def word_of_day_entries() -> list[WordEntry]:
     return list_entries()
 
 
+@router.get("/word-of-day/random", response_model=WordOfDay)
+async def word_of_day_random() -> WordOfDay:
+    return random_entry()
+
+
 @router.get("/news", response_model=NewsPulse)
-async def news_pulse(request: Request) -> NewsPulse:
+async def news_pulse(
+    request: Request,
+    refresh: bool = Query(default=False),
+) -> NewsPulse:
     service: NewsService = request.app.state.news
-    return await service.pulse()
+    return await service.pulse(refresh=refresh)
 
 
 @router.get("/podcast-digest", response_model=PodcastDigest)
-async def podcast_digest(request: Request) -> PodcastDigest:
+async def podcast_digest(
+    request: Request,
+    refresh: bool = Query(default=False),
+) -> PodcastDigest:
     service: PodcastService = request.app.state.podcast
-    return await service.digest()
+    return await service.digest(refresh=refresh)
 
 
 @router.get("/dictionary/lookup", response_model=DictionaryLookup)

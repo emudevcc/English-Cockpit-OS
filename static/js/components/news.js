@@ -3,15 +3,14 @@
 import { apiGet, apiPost } from "../lib/api.js";
 import { clear, h } from "../lib/dom.js";
 
-const REFRESH_MS = 30 * 60 * 1000;
-
 /**
  * @param {HTMLElement} slot
+ * @param {{bus?: {on: Function}}} [ctx]
  */
-export function init(slot) {
-  async function load() {
+export function init(slot, ctx) {
+  async function load(fresh = false) {
     try {
-      const data = await apiGet("/api/news");
+      const data = await apiGet(fresh ? "/api/news?refresh=true" : "/api/news");
       clear(slot);
       if (!data.headlines.length) {
         slot.append(h("p", { class: "muted", text: "No headlines available right now." }));
@@ -31,12 +30,12 @@ export function init(slot) {
     clear(slot);
     slot.append(
       h("p", { class: "error", text: `News unavailable: ${error.message}` }),
-      h("button", { type: "button", class: "chip", text: "Retry", onclick: load }),
+      h("button", { type: "button", class: "chip", text: "Retry", onclick: () => load(true) }),
     );
   }
 
   load();
-  setInterval(load, REFRESH_MS);
+  ctx?.bus?.on("content:refresh", () => load(true));
 }
 
 function buildItem(headline) {

@@ -7,6 +7,7 @@ so every day yields one stable entry without any external call or database hit.
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 from datetime import date
 from typing import Literal
@@ -270,6 +271,20 @@ def entry_for_date(day: date) -> WordOfDay:
     entry = _ENTRIES[day.toordinal() % len(_ENTRIES)]
     return WordOfDay(
         date=day,
+        expression=entry.expression,
+        kind=entry.kind,
+        ipa=entry.ipa,
+        register_tag=entry.register_tag,
+        definition=entry.definition,
+        examples=list(entry.examples),
+    )
+
+
+def random_entry() -> WordOfDay:
+    """Return a random curated entry (a fresh word on manual refresh)."""
+    entry = random.choice(_ENTRIES)
+    return WordOfDay(
+        date=date.today(),
         expression=entry.expression,
         kind=entry.kind,
         ipa=entry.ipa,

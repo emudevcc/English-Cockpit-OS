@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 PODCAST_FEEDS: tuple[tuple[str, str], ...] = (
     ("NPR Up First", "https://feeds.npr.org/510318/podcast.xml"),
     ("BBC Global News", "https://podcasts.files.bbci.co.uk/p02nq0gn.rss"),
+    ("BBC 6 Minute English", "https://podcasts.files.bbci.co.uk/p02pc9tn.rss"),
+    ("Learning English Conversations", "https://podcasts.files.bbci.co.uk/p02pc9zn.rss"),
+    ("BBC Business Daily", "https://podcasts.files.bbci.co.uk/p002vsxs.rss"),
+    ("NPR Planet Money", "https://feeds.npr.org/510289/podcast.xml"),
 )
 
 _BRIEF_SYSTEM = (
@@ -33,7 +37,7 @@ _BRIEF_SYSTEM = (
     '"key_terms": [{"term": "string", "definition": "string"}]}.'
 )
 
-_MAX_EPISODES = 3
+_MAX_EPISODES = 6
 _SUMMARY_LENGTH = 500
 
 
@@ -67,8 +71,12 @@ class PodcastService:
         self._feeds = feeds
         self._cache = TTLCache[PodcastDigest](ttl_seconds)
 
-    async def digest(self) -> PodcastDigest:
-        return await self._cache.get("podcast", self._fetch_digest)
+    async def digest(self, *, refresh: bool = False) -> PodcastDigest:
+        if not refresh:
+            return await self._cache.get("podcast", self._fetch_digest)
+        digest = await self._fetch_digest()
+        self._cache.put("podcast", digest)
+        return digest
 
     async def _fetch_digest(self) -> PodcastDigest:
         episodes = await self._fetch_episodes()
@@ -94,7 +102,7 @@ class PodcastService:
 
     async def _fetch_episodes(self) -> list[PodcastEpisode]:
         results = await asyncio.gather(
-            *(fetch_feed(self._client, url, limit=2) for _, url in self._feeds),
+            *(fetch_feed(self._client, url, limit=1) for _, url in self._feeds),
             return_exceptions=True,
         )
         episodes: list[PodcastEpisode] = []

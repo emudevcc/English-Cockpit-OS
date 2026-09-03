@@ -77,7 +77,7 @@ templates/index.html         13 <section data-module> cards
 | `register` | rewrite a sentence as Executive/Informal/Technical/Polite/Hedged |
 | `weekly_plan` | goal + minutes + focus chips → LLM seven-day plan (persisted to localStorage) |
 | `dictionary` | global click-any-word popover (pronounce + add-to-review) |
-| `stats` | header greeting + 🔥 streak + daily-goal progress ring |
+| `stats` | header greeting + 🔥 streak + daily-goal ring + content-refresh countdown + ⟳ force-refresh |
 
 ## Design language
 
@@ -94,8 +94,9 @@ templates/index.html         13 <section data-module> cards
 
 - All animations are `transform`/`opacity` (GPU-composited); `prefers-reduced-motion`
   is respected.
-- Content modules refetch every 30 min and expose Retry buttons; the dictionary and
-  news/podcast caches avoid redundant work.
+- Content refreshes on a shared, localStorage-anchored 30-min cycle driven by the
+  header (the ⟳ button forces an immediate refresh); the anchor persists across page
+  reloads so the countdown doesn't reset. News/podcast also expose Retry buttons.
 - Transcript history is capped at 50 lines; voice history/log and speech transcript
   are length-capped to keep the DOM bounded.
 

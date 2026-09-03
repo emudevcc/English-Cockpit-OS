@@ -1,20 +1,42 @@
-// Progress / streak strip (header) with a daily-review goal ring and a
-// content-refresh countdown.
+// Progress / streak strip (header) with a daily-review goal ring, a persistent
+// content-refresh countdown, and a force-refresh button.
 
 import { apiGet } from "../lib/api.js";
 import { clear, h } from "../lib/dom.js";
+import { formatClock, isExpired, remainingSeconds } from "../lib/timer.js";
 
 const STATS_REFRESH_MS = 60 * 1000;
 const CONTENT_REFRESH_MS = 30 * 60 * 1000;
+const CONTENT_REFRESH_SEC = CONTENT_REFRESH_MS / 1000;
+const ANCHOR_KEY = "cockpit-content-refresh-anchor";
 
 /**
  * @param {HTMLElement} el
+ * @param {{bus?: {on: Function, emit: Function}}} [ctx]
  */
-export function init(el) {
-  const contentStart = Date.now();
+export function init(el, ctx = {}) {
+  const bus = ctx.bus;
+
+  // The anchor persists across reloads, so the countdown doesn't restart when
+  // the page is refreshed. If the persisted cycle already elapsed (e.g. the
+  // kiosk was off), start a fresh cycle — the modules fetch on boot anyway.
+  let contentStart = readAnchor();
+  if (isExpired(CONTENT_REFRESH_SEC, contentStart, Date.now())) {
+    contentStart = Date.now();
+    writeAnchor(contentStart);
+  }
+
   const countdownEl = h("span", {
     class: "stat",
-    title: "Content refresh (news / podcast / word-of-day)",
+    title: "Next automatic content refresh (news / podcast / word-of-day)",
+  });
+  const refreshBtn = h("button", {
+    type: "button",
+    class: "chip icon",
+    "aria-label": "Refresh content now",
+    title: "Refresh content now",
+    text: "⟳",
+    onclick: forceRefresh,
   });
 
   async function load() {
@@ -22,7 +44,7 @@ export function init(el) {
       const s = await apiGet("/api/srs/stats");
       clear(el);
       render(s);
-      el.append(countdownEl);
+      el.append(refreshBtn, countdownEl);
     } catch {
       clear(el);
     }
@@ -44,17 +66,45 @@ export function init(el) {
   }
 
   function tick() {
-    const remaining = CONTENT_REFRESH_MS - ((Date.now() - contentStart) % CONTENT_REFRESH_MS);
-    const total = Math.max(0, Math.ceil(remaining / 1000));
-    const mm = String(Math.floor(total / 60)).padStart(2, "0");
-    const ss = String(total % 60).padStart(2, "0");
-    countdownEl.textContent = `⟳ ${mm}:${ss}`;
+    const now = Date.now();
+    if (isExpired(CONTENT_REFRESH_SEC, contentStart, now)) {
+      contentStart = now;
+      writeAnchor(now);
+      bus?.emit("content:refresh");
+    }
+    countdownEl.textContent = formatClock(remainingSeconds(CONTENT_REFRESH_SEC, contentStart, now));
+  }
+
+  function forceRefresh() {
+    contentStart = Date.now();
+    writeAnchor(contentStart);
+    bus?.emit("content:refresh");
+    tick();
   }
 
   load();
   tick();
   setInterval(load, STATS_REFRESH_MS);
   setInterval(tick, 1000);
+}
+
+function readAnchor() {
+  try {
+    const raw = localStorage.getItem(ANCHOR_KEY);
+    const value = Number(raw);
+    if (Number.isFinite(value) && value > 0) return value;
+  } catch {
+    /* storage unavailable */
+  }
+  return Date.now();
+}
+
+function writeAnchor(ms) {
+  try {
+    localStorage.setItem(ANCHOR_KEY, String(ms));
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 function goalRing(pct, done, goal) {

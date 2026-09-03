@@ -62,7 +62,7 @@ function boot() {
   }
 
   dictionary.init();
-  stats.init(document.getElementById("cockpit-stats"));
+  stats.init(document.getElementById("cockpit-stats"), ctx);
   setupFocusMode();
   setupHints();
 }

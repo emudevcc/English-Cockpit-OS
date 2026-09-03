@@ -6,7 +6,7 @@ from tests.backend.helpers import FakeDeepgram
 
 
 def test_stations_are_non_empty() -> None:
-    assert RADIO_STATIONS
+    assert len(RADIO_STATIONS) >= 3
     service = RadioService(FakeDeepgram())
     assert service.stations() == list(RADIO_STATIONS)
 
