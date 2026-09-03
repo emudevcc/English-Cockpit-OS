@@ -13,11 +13,11 @@ static/
   js/ws_client.js             auto-reconnecting WebSocket (backoff 1s→15s, binary-capable)
   js/lib/                     pure, testable logic
     api.js backoff.js bus.js text.js timer.js speech.js connectors.js highlight.js
-    srs.js audio.js word_extract.js pronounce.js shadow.js dom.js
+    srs.js audio.js word_extract.js pronounce.js shadow.js drill.js dom.js
   js/components/              one DOM module per feature
-    word_of_day news podcast radio srs_deck prep_drill declutter voice speech_coach
-    dictionary shadowing register stats
-templates/index.html         11 <section data-module> cards
+    word_of_day news podcast radio srs_deck prep_drill grammar declutter voice
+    speech_coach dictionary shadowing register weekly_plan stats
+templates/index.html         13 <section data-module> cards
 ```
 
 ## Boot sequence (`main.js`)
@@ -69,11 +69,13 @@ templates/index.html         11 <section data-module> cards
 | `radio` | station select + player + live caption/transcript + Pause/Clear |
 | `srs_deck` | new+due queue (New/Review badge), Space flip, 1–4 grade, 🔊, Export |
 | `prep_drill` | 90 s countdown, auto-submit, feedback + "Run again" |
-| `declutter` | paste → polish → word-count/verb/tone + "Copy revised" |
+| `grammar` | 7-tab hub: irregular verbs, phrasal verbs, collocations, use of English, word forms, rule of the day, grammar coach (each drill save-to-SRS) |
+| `declutter` | Writing Coach: Polish (word-count/verb/tone) + Correct (per-error explanations) tabs |
 | `voice` | hold-to-talk → roleplay turn → TTS playback |
-| `speech_coach` | live WPM + pace + fillers/min + cadence HUD + session summary |
-| `shadowing` | 🔊 play → 🎤 repeat → word-level accuracy diff |
-| `register` | rewrite a sentence as Executive/Informal/Technical |
+| `speech_coach` | Live Metrics (WPM/pace/fillers/cadence HUD) + Monologue (record → LLM feedback) tabs |
+| `shadowing` | Pronunciation: Shadow / Minimal Pairs / Dictation tabs |
+| `register` | rewrite a sentence as Executive/Informal/Technical/Polite/Hedged |
+| `weekly_plan` | goal + minutes + focus chips → LLM seven-day plan (persisted to localStorage) |
 | `dictionary` | global click-any-word popover (pronounce + add-to-review) |
 | `stats` | header greeting + 🔥 streak + daily-goal progress ring |
 
@@ -100,7 +102,7 @@ templates/index.html         11 <section data-module> cards
 ## Testing
 
 ```bash
-npm test            # node --test tests/frontend/  (47 tests)
+npm test            # node --test tests/frontend/  (55 tests)
 ```
 
 Pure logic in `lib/` is covered; DOM components are syntax-checked (`node --check`)

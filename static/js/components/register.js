@@ -19,6 +19,8 @@ export function init(slot) {
     h("option", { value: "Executive", text: "Executive" }),
     h("option", { value: "Informal", text: "Informal" }),
     h("option", { value: "Technical", text: "Technical" }),
+    h("option", { value: "Polite", text: "Polite" }),
+    h("option", { value: "Hedged", text: "Hedged" }),
   );
   const button = h("button", { class: "primary", type: "button", text: "Rewrite", onclick: rewrite });
   const resultEl = h("div", { class: "declutter-result", "aria-live": "polite" });

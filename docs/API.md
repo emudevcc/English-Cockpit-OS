@@ -150,10 +150,86 @@ Generate a multiple-choice comprehension question (LLM). Request `{"text":"…"}
 
 ### `POST /api/register/rewrite`
 Rewrite a sentence in a target register (LLM). Request
-`{"text":"…","register_tag":"Executive"}` (`Executive`/`Informal`/`Technical`).
+`{"text":"…","register_tag":"Executive"}`. Tags: `Executive` / `Informal` /
+`Technical` / `Polite` / `Hedged`.
 
 ```json
 {"rewritten":"…"}
+```
+
+### `POST /api/writing/correct`
+Correct grammar, usage, punctuation, and word choice (LLM), returning the
+corrected text and a per-error explanation list. Request `{"draft":"…"}`.
+
+```json
+{"corrected":"He went…","corrections":[{"original":"He go","corrected":"He went",
+  "explanation":"Use the past simple…"}],"error_count":1}
+```
+
+### `GET /api/speech/topics`
+Curated monologue topics (deterministic, no LLM): `["Describe a project…", …]`.
+
+### `POST /api/speech/monologue/evaluate`
+Evaluate a recorded monologue (LLM). Request
+`{"topic":"…","transcript":"…","duration_seconds":60}`.
+
+```json
+{"structure_score":70,"fluency_score":65,"vocabulary_score":80,"grammar_score":75,
+ "strengths":["…"],"improvements":["…"],"model_answer":"…"}
+```
+
+## Learning (grammar & pronunciation)
+
+### `GET /api/grammar/irregular-verbs`
+Curated irregular verbs (deterministic, no LLM):
+`[{"base":"begin","past":"began","participle":"begun"}, …]`.
+
+### `GET /api/grammar/drill?kind=<phrasal_verb|collocation|use_of_english>`
+LLM multiple-choice cloze with one gap and four options.
+
+```json
+{"sentence":"The board decided to ___ the merger.","options":["push back on","rule out",
+ "phase out","break down"],"answer":"push back on","explanation":"…"}
+```
+
+### `GET /api/grammar/word-forms`
+LLM gap-fill requiring the correct derived form of a root word.
+
+```json
+{"sentence":"The ___ was final.","root":"decide","answer":"decision","explanation":"…"}
+```
+
+### `GET /api/grammar/rule-of-day`
+Deterministic daily grammar rule (no LLM). Optional `?date=YYYY-MM-DD`.
+
+```json
+{"id":"third-conditional","title":"Third conditional (past regret)","rule":"…",
+ "examples":["…","…"],"common_error":"…"}
+```
+
+### `POST /api/grammar/coach`
+Free-form grammar question → LLM answer. Request `{"question":"…"}`.
+
+```json
+{"answer":"Use the present perfect for a past action with present relevance…"}
+```
+
+### `GET /api/pronunciation/minimal-pairs`
+Curated minimal pairs (deterministic, no LLM):
+`[{"a":"ship","b":"sheep","ipa_a":"/ʃɪp/","ipa_b":"/ʃiːp/"}, …]`.
+
+### `GET /api/pronunciation/pitfalls`
+Curated Spanish-speaker pronunciation pitfalls (deterministic, no LLM):
+`[{"issue":"/v/ vs /b/","tip":"…"}, …]`.
+
+## Plan
+
+### `POST /api/plan/weekly`
+Generate a personalized seven-day plan (LLM). Request
+`{"goal":"…","minutes_per_day":30,"focus_areas":["Speaking","Grammar"]}`.
+
+```json
+{"days":[{"day":"Monday","activity":"…","duration_minutes":45}, …],"tip":"…"}
 ```
 
 ### `GET /api/radio/stations`

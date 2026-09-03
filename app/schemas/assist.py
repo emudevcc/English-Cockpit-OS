@@ -92,8 +92,46 @@ class RegisterRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     text: str = Field(min_length=1, max_length=2000)
-    register_tag: Literal["Executive", "Informal", "Technical"] = "Executive"
+    register_tag: Literal[
+        "Executive", "Informal", "Technical", "Polite", "Hedged"
+    ] = "Executive"
 
 
 class RegisterResult(BaseModel):
     rewritten: str
+
+
+class CorrectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    draft: str = Field(min_length=1, max_length=20000)
+
+
+class Correction(BaseModel):
+    original: str
+    corrected: str
+    explanation: str = ""
+
+
+class CorrectResult(BaseModel):
+    corrected: str
+    corrections: list[Correction] = Field(default_factory=list)
+    error_count: int = 0
+
+
+class MonologueEvaluateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    topic: str = Field(min_length=1, max_length=2000)
+    transcript: str = Field(min_length=1, max_length=20000)
+    duration_seconds: float = Field(default=0.0, ge=0.0)
+
+
+class MonologueFeedback(BaseModel):
+    structure_score: int
+    fluency_score: int
+    vocabulary_score: int
+    grammar_score: int
+    strengths: list[str] = Field(default_factory=list)
+    improvements: list[str] = Field(default_factory=list)
+    model_answer: str = ""

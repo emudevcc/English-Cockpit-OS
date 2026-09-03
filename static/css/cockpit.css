@@ -148,11 +148,13 @@ body {
 .cockpit-card[data-module="radio"] { border-top-color: #ff453a; }
 .cockpit-card[data-module="srs"] { border-top-color: #30d158; }
 .cockpit-card[data-module="prep"] { border-top-color: #ff9f0a; }
+.cockpit-card[data-module="grammar"] { border-top-color: #ff9f0a; }
 .cockpit-card[data-module="declutter"] { border-top-color: #ff375f; }
 .cockpit-card[data-module="voice"] { border-top-color: #64d2ff; }
 .cockpit-card[data-module="speech"] { border-top-color: #32d74b; }
 .cockpit-card[data-module="shadowing"] { border-top-color: #ffd60a; }
 .cockpit-card[data-module="register"] { border-top-color: #ff9f0a; }
+.cockpit-card[data-module="weekly-plan"] { border-top-color: #bf5af2; }
 
 /* Subtle hover lift (hover-capable devices only) */
 @media (hover: hover) {
@@ -527,6 +529,11 @@ button:disabled {
   font-size: 0.95rem;
   line-height: 1;
 }
+.chip.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 .chip.is-live {
   color: var(--danger);
   border-color: var(--danger);
@@ -687,6 +694,20 @@ input:focus-visible,
 .shadow-score {
   font-weight: 600;
   margin: 0.3rem 0;
+}
+
+/* Irregular-verb drill */
+.drill-verb {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0;
+}
+.drill-verb .wod-term {
+  font-size: 1.4rem;
+}
+.drill-result {
+  margin: 0.4rem 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

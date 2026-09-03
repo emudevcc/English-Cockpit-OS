@@ -5,6 +5,7 @@ import { h } from "./lib/dom.js";
 import { createWsClient } from "./ws_client.js";
 import * as declutter from "./components/declutter.js";
 import * as dictionary from "./components/dictionary.js";
+import * as grammar from "./components/grammar.js";
 import * as news from "./components/news.js";
 import * as podcast from "./components/podcast.js";
 import * as prepDrill from "./components/prep_drill.js";
@@ -15,6 +16,7 @@ import * as speechCoach from "./components/speech_coach.js";
 import * as srsDeck from "./components/srs_deck.js";
 import * as stats from "./components/stats.js";
 import * as voice from "./components/voice.js";
+import * as weeklyPlan from "./components/weekly_plan.js";
 import * as wordOfDay from "./components/word_of_day.js";
 
 const MODULES = {
@@ -24,11 +26,13 @@ const MODULES = {
   radio,
   srs: srsDeck,
   prep: prepDrill,
+  grammar,
   declutter,
   voice,
   speech: speechCoach,
   shadowing,
   register,
+  "weekly-plan": weeklyPlan,
 };
 
 function boot() {

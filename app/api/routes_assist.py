@@ -8,8 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.api.deps import rate_limited
 from app.schemas.assist import (
+    CorrectRequest,
+    CorrectResult,
     DeclutterRequest,
     DeclutterResult,
+    MonologueEvaluateRequest,
+    MonologueFeedback,
     QuizItem,
     QuizRequest,
     RadioStation,
@@ -22,10 +26,12 @@ from app.schemas.assist import (
 )
 from app.services.connectors import DISCOURSE_CONNECTORS
 from app.services.declutter import DeclutterService
+from app.services.monologue import MonologueService
 from app.services.quiz import QuizService
 from app.services.radio import RadioService
 from app.services.register import RegisterService
 from app.services.voice import VoiceService
+from app.services.writing import WritingCoachService
 
 router = APIRouter(prefix="/api", tags=["assist"])
 
@@ -38,6 +44,16 @@ router = APIRouter(prefix="/api", tags=["assist"])
 async def declutter(payload: DeclutterRequest, request: Request) -> DeclutterResult:
     service: DeclutterService = request.app.state.declutter
     return await service.declutter(payload)
+
+
+@router.post(
+    "/writing/correct",
+    response_model=CorrectResult,
+    dependencies=[Depends(rate_limited)],
+)
+async def writing_correct(payload: CorrectRequest, request: Request) -> CorrectResult:
+    service: WritingCoachService = request.app.state.writing
+    return await service.correct(payload.draft)
 
 
 @router.post(
@@ -77,6 +93,25 @@ async def radio_transcribe(payload: TranscribeRequest, request: Request) -> Tran
 @router.get("/speech/connectors", response_model=list[str])
 async def speech_connectors() -> list[str]:
     return list(DISCOURSE_CONNECTORS)
+
+
+@router.get("/speech/topics", response_model=list[str])
+async def speech_topics(request: Request) -> list[str]:
+    service: MonologueService = request.app.state.monologue
+    return service.topics()
+
+
+@router.post(
+    "/speech/monologue/evaluate",
+    response_model=MonologueFeedback,
+    dependencies=[Depends(rate_limited)],
+)
+async def monologue_evaluate(
+    payload: MonologueEvaluateRequest,
+    request: Request,
+) -> MonologueFeedback:
+    service: MonologueService = request.app.state.monologue
+    return await service.evaluate(payload.topic, payload.transcript, payload.duration_seconds)
 
 
 @router.post(

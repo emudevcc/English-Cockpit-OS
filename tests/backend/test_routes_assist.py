@@ -92,3 +92,64 @@ def test_speech_connectors_endpoint(client_factory: ClientFactory) -> None:
         response = client.get("/api/speech/connectors")
         assert response.status_code == 200
         assert "furthermore" in response.json()
+
+
+def test_writing_correct_endpoint(client_factory: ClientFactory) -> None:
+    llm = FakeLLM(
+        result={
+            "corrected": "He goes.",
+            "corrections": [
+                {"original": "He go", "corrected": "He goes", "explanation": "3rd person"}
+            ],
+        }
+    )
+    with client_factory(llm=llm) as client:
+        response = client.post("/api/writing/correct", json={"draft": "He go."})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["corrected"] == "He goes."
+        assert data["error_count"] == 1
+
+
+def test_speech_topics_endpoint(client_factory: ClientFactory) -> None:
+    with client_factory() as client:
+        response = client.get("/api/speech/topics")
+        assert response.status_code == 200
+        assert len(response.json()) >= 6
+
+
+def test_monologue_evaluate_endpoint(client_factory: ClientFactory) -> None:
+    llm = FakeLLM(
+        result={
+            "structure_score": 70,
+            "fluency_score": 60,
+            "vocabulary_score": 80,
+            "grammar_score": 75,
+            "strengths": ["Clear"],
+            "improvements": ["Cut fillers"],
+            "model_answer": "A model answer.",
+        }
+    )
+    with client_factory(llm=llm) as client:
+        response = client.post(
+            "/api/speech/monologue/evaluate",
+            json={"topic": "t", "transcript": "I spoke.", "duration_seconds": 60},
+        )
+        assert response.status_code == 200
+        assert response.json()["structure_score"] == 70
+
+
+def test_weekly_plan_endpoint(client_factory: ClientFactory) -> None:
+    llm = FakeLLM(
+        result={
+            "days": [{"day": "Monday", "activity": "Speak", "duration_minutes": 30}],
+            "tip": "Keep going.",
+        }
+    )
+    with client_factory(llm=llm) as client:
+        response = client.post(
+            "/api/plan/weekly",
+            json={"goal": "fluency", "minutes_per_day": 30, "focus_areas": ["Speaking"]},
+        )
+        assert response.status_code == 200
+        assert response.json()["days"][0]["day"] == "Monday"

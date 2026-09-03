@@ -24,6 +24,11 @@ Hard constraints that shaped every decision:
 - **Graceful degradation.** When an external API is unconfigured or failing,
   features degrade (empty vocab, summary fallback, empty transcript) instead of
   crashing the dashboard.
+- **Deterministic where possible.** Facts that never change — irregular verbs,
+  minimal pairs, pronunciation pitfalls, grammar rules, monologue topics — are
+  curated in `app/services/*.py` and served with zero LLM cost or hallucination.
+  Only genuinely generative work (drills, coaching, writing, speaking feedback,
+  planning) calls the LLM, always rate-limited and budgeted.
 
 ## Process & resource model
 
@@ -35,7 +40,8 @@ Browser ─┤  FastAPI app                                                     
         │   ├─ app.state.db          one aiosqlite connection (WAL + write lock)            │
         │   ├─ app.state.llm         Groq client (retry + JSON mode + spend budget)         │
         │   ├─ app.state.deepgram    Deepgram client (pre-recorded + budget)                │
-        │   ├─ app.state.news/podcast/...  services (TTL-cached)                            │
+        │   ├─ app.state.news/podcast/...  content services (TTL-cached)                    │
+        │   ├─ app.state.grammar_drill/writing/monologue/plan  LLM drill & coach services   │
         │   ├─ app.state.ws_manager  WebSocket registry + heartbeat task                    │
         │   └─ app.state.rate_limiter / budgets                                             │
         └────────────────────────────────────────────────────────────────────────────────────┘
@@ -81,6 +87,10 @@ Key points:
 | Spend budget | `app/core/budget.py`, rolling 24 h | cap paid calls per day (`LLM_DAILY_LIMIT`, `DEEPGRAM_DAILY_LIMIT`) |
 | TTL cache | `app/core/cache.py` | news/podcast (10 min) and dictionary (24 h) with in-flight coalescing |
 | Retry + jitter | `llm.py` / `deepgram.py` | retry 5xx/429/transport with exponential backoff + jitter |
+
+All LLM-generative drill/coach/writing/speaking/plan endpoints are wrapped with
+the per-IP `rate_limited` dependency **and** the 24-hour spend budget, so a
+misbehaving kiosk cannot blow past the daily cap.
 
 ## Error-handling strategy
 

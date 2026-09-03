@@ -20,6 +20,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.routes_assist import router as assist_router
 from app.api.routes_content import router as content_router
+from app.api.routes_learning import router as learning_router
+from app.api.routes_plan import router as plan_router
 from app.api.routes_prep import router as prep_router
 from app.api.routes_radio_ws import router as radio_ws_router
 from app.api.routes_srs import router as srs_router
@@ -38,6 +40,7 @@ from app.services.deepgram import (
     DeepgramProvider,
 )
 from app.services.dictionary import DictionaryService
+from app.services.grammar_drill import GrammarDrillService
 from app.services.llm import (
     LLMBudgetExceeded,
     LLMClient,
@@ -45,7 +48,9 @@ from app.services.llm import (
     LLMNotConfiguredError,
     LLMProvider,
 )
+from app.services.monologue import MonologueService
 from app.services.news import NewsService
+from app.services.plan import WeeklyPlanService
 from app.services.podcast import PodcastService
 from app.services.prep import PrepService
 from app.services.quiz import QuizService
@@ -54,6 +59,7 @@ from app.services.register import RegisterService
 from app.services.srs import SrsService
 from app.services.srs_seed import seed_default_deck
 from app.services.voice import VoiceService
+from app.services.writing import WritingCoachService
 
 
 @asynccontextmanager
@@ -136,6 +142,10 @@ def create_app(
     app.state.voice = VoiceService(llm)
     app.state.quiz = QuizService(llm)
     app.state.register = RegisterService(llm)
+    app.state.grammar_drill = GrammarDrillService(llm)
+    app.state.writing = WritingCoachService(llm)
+    app.state.monologue = MonologueService(llm)
+    app.state.plan = WeeklyPlanService(llm)
     app.state.radio = RadioService(deepgram)
     app.state.dictionary = DictionaryService(llm, ttl_seconds=settings.dictionary_cache_ttl_seconds)
     app.state.rate_limiter = RateLimiter(settings.rate_limit_per_minute, 60.0)
@@ -151,6 +161,8 @@ def create_app(
     app.include_router(ws_router)
     app.include_router(radio_ws_router)
     app.include_router(content_router)
+    app.include_router(learning_router)
+    app.include_router(plan_router)
     app.include_router(srs_router)
     app.include_router(prep_router)
     app.include_router(assist_router)

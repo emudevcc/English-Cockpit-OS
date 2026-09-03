@@ -24,10 +24,12 @@ app/
   main.py                  app factory, lifespan, DI, exception handlers, static mount
   api/websocket.py         /ws endpoint (ping/pong heartbeat)
   api/routes_radio_ws.py   /ws/radio live STT relay (browser audio -> Deepgram)
-  api/routes_content.py    word-of-day, news, podcast digest
+  api/routes_content.py    word-of-day, news, podcast digest, dictionary
+  api/routes_learning.py   verbs, minimal pairs, pitfalls, grammar drills + coach
   api/routes_srs.py        SRS decks / due cards / review
   api/routes_prep.py       PREP scenario + evaluate
-  api/routes_assist.py     declutter, voice, radio, speech connectors
+  api/routes_assist.py     declutter, writing-correct, voice, radio, speech, monologue
+  api/routes_plan.py       weekly study plan
   api/deps.py              shared dependencies (rate limiting)
   core/config.py           typed settings (pydantic-settings)
   core/db.py               aiosqlite (WAL) + explicit write transactions
@@ -48,16 +50,23 @@ app/
     prep.py, declutter.py, voice.py, radio.py, connectors.py
     dictionary.py          click-to-translate lookup (cached)
     quiz.py, register.py   comprehension quiz + register rewrite
+    irregular_verbs.py     curated irregular verbs (deterministic, no LLM)
+    minimal_pairs.py       curated minimal pairs + pitfalls (deterministic, no LLM)
+    grammar_rules.py       curated Rule-of-the-Day (deterministic, no LLM)
+    grammar_drill.py       LLM phrasal/collocation/use-of-English/word-form drills + coach
+    writing.py             LLM grammar/usage correction
+    monologue.py           curated monologue topics + LLM feedback
+    plan.py                LLM weekly study plan
 static/
   css/cockpit.css          dark-mode CSS Grid, accessible
   js/main.js               boots WS + event bus + modules
   js/ws_client.js          auto-reconnecting WebSocket client (1s→15s backoff)
-  js/lib/*.js              pure logic: timer, speech, srs, text, connectors, highlight, shadow, word_extract, audio, pronounce, api, bus, backoff, dom
-  js/components/*.js       one module per feature (word_of_day, news, podcast, radio, srs_deck, prep_drill, declutter, voice, speech_coach, dictionary, shadowing, register, stats)
-templates/index.html       kiosk dashboard shell
+  js/lib/*.js              pure logic: timer, speech, srs, text, connectors, highlight, shadow, drill, word_extract, audio, pronounce, api, bus, backoff, dom
+  js/components/*.js       one module per feature (word_of_day, news, podcast, radio, srs_deck, prep_drill, grammar, declutter, voice, speech_coach, dictionary, shadowing, register, weekly_plan, stats)
+templates/index.html       kiosk dashboard shell (13 cards)
 deploy/Caddyfile           optional LAN exposure with basic auth
-tests/backend              pytest (132 tests)
-tests/frontend             node:test (47 tests)
+tests/backend              pytest (175 tests)
+tests/frontend             node:test (55 tests)
 ```
 
 ## API
@@ -89,6 +98,17 @@ tests/frontend             node:test (47 tests)
 | GET | `/api/radio/stations` | live stream URLs |
 | POST | `/api/radio/transcribe` | Deepgram transcript + connector highlights |
 | GET | `/api/speech/connectors` | discourse-connector list |
+| GET | `/api/grammar/irregular-verbs` | curated irregular-verb list (deterministic) |
+| GET | `/api/grammar/drill?kind=` | LLM cloze MCQ (`phrasal_verb`/`collocation`/`use_of_english`) |
+| GET | `/api/grammar/word-forms` | LLM gap-fill (correct derived form) |
+| GET | `/api/grammar/rule-of-day` | deterministic daily grammar rule (`?date=` optional) |
+| POST | `/api/grammar/coach` | free-form grammar question → LLM answer |
+| GET | `/api/pronunciation/minimal-pairs` | curated minimal pairs (deterministic) |
+| GET | `/api/pronunciation/pitfalls` | curated Spanish-speaker pitfalls (deterministic) |
+| POST | `/api/writing/correct` | grammar/usage correction + per-error explanations |
+| GET | `/api/speech/topics` | curated monologue topics |
+| POST | `/api/speech/monologue/evaluate` | LLM speaking feedback (4 scores + model answer) |
+| POST | `/api/plan/weekly` | LLM seven-day study plan |
 
 LLM/Deepgram "not configured" → `503`; upstream failure → `502`; bad input → `422`.
 
@@ -112,7 +132,7 @@ Create a `.env` (gitignored) next to the app. Values are read once at startup.
 | Env var | Default | Notes |
 |---|---|---|
 | `COCKPIT_DB` | `data/cockpit.db` | SQLite location. |
-| `LLM_API_KEY` | *(empty)* | Groq key; enables PREP/declutter/voice/vocab/brief. |
+| `LLM_API_KEY` | *(empty)* | Groq key; enables all generative features (drills, coach, writing, monologue, plan, etc.). |
 | `LLM_BASE_URL` | `https://api.groq.com/openai/v1` | OpenAI-compatible endpoint. |
 | `LLM_MODEL` | `qwen/qwen3.8-27b` | Any JSON-mode-capable model on your Groq account. |
 | `LLM_TIMEOUT_SECONDS` | `60` | Per-request LLM timeout. |
@@ -137,8 +157,8 @@ Feed URLs are defined as constants in `app/services/news.py`, `podcast.py`, and
 ## Tests
 
 ```bash
-.venv/bin/python -m pytest -q    # backend (132)
-npm test                          # frontend pure logic (47)
+.venv/bin/python -m pytest -q    # backend (175)
+npm test                          # frontend pure logic (55)
 ```
 
 ## Security

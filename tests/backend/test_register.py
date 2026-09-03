@@ -26,3 +26,14 @@ def test_register_endpoint(client_factory: ClientFactory) -> None:
         )
         assert response.status_code == 200
         assert response.json()["rewritten"] == "Rewritten text"
+
+
+def test_register_endpoint_polite_and_hedged(client_factory: ClientFactory) -> None:
+    llm = FakeLLM(result={"rewritten": "Rewritten text"})
+    with client_factory(llm=llm) as client:
+        for tag in ("Polite", "Hedged"):
+            response = client.post(
+                "/api/register/rewrite", json={"text": "hey", "register_tag": tag}
+            )
+            assert response.status_code == 200
+            assert response.json()["rewritten"] == "Rewritten text"
