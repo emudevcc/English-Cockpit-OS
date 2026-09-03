@@ -23,3 +23,16 @@ export function reductionPercent(before, after) {
   const pct = ((before - after) / before) * 100;
   return Math.max(0, Math.round(pct * 10) / 10);
 }
+
+/**
+ * Normalize a user text selection into a lookup term: collapse whitespace,
+ * trim, and cap length. Returns null if empty.
+ * @param {string} text
+ * @param {number} [maxLength]
+ * @returns {string|null}
+ */
+export function sanitizePhrase(text, maxLength = 200) {
+  const cleaned = String(text ?? "").replace(/\s+/g, " ").trim();
+  if (!cleaned) return null;
+  return cleaned.length > maxLength ? cleaned.slice(0, maxLength).trim() : cleaned;
+}

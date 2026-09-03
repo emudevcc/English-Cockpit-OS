@@ -23,16 +23,24 @@ async def test_lookup_returns_parsed_result() -> None:
     llm = FakeLLM(result=_result())
     service = DictionaryService(llm)
     result = await service.lookup("Hello")
-    assert result.word == "hello"
+    assert result.word == "Hello"  # original case preserved for display
     assert result.ipa == "/ˈhɛloʊ/"
     assert result.synonyms == ["greeting", "salutation"]
     assert result.spanish == "hola"
 
 
-async def test_lookup_is_cached() -> None:
+async def test_lookup_handles_phrase() -> None:
     llm = FakeLLM(result=_result())
     service = DictionaryService(llm)
-    await service.lookup("hello")
+    result = await service.lookup("look forward to")
+    assert result.word == "look forward to"
+    assert llm.calls[0]["user"] == "look forward to"
+
+
+async def test_lookup_is_cached_case_insensitively() -> None:
+    llm = FakeLLM(result=_result())
+    service = DictionaryService(llm)
+    await service.lookup("Hello")
     await service.lookup("hello")
     assert len(llm.calls) == 1
 

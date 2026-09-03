@@ -48,7 +48,7 @@ async def podcast_digest(request: Request) -> PodcastDigest:
 
 @router.get("/dictionary/lookup", response_model=DictionaryLookup)
 async def dictionary_lookup(
-    word: Annotated[str, Query(min_length=1, max_length=64)],
+    word: Annotated[str, Query(min_length=1, max_length=300)],
     request: Request,
 ) -> DictionaryLookup:
     service: DictionaryService = request.app.state.dictionary

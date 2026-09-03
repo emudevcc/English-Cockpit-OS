@@ -3,6 +3,7 @@
 import { apiGet, apiPost } from "../lib/api.js";
 import { clear, h } from "../lib/dom.js";
 import { pronounceButton } from "../lib/pronounce.js";
+import { sanitizePhrase } from "../lib/text.js";
 import { wordAtOffset } from "../lib/word_extract.js";
 
 const IGNORE_WORDS = new Set([
@@ -28,9 +29,9 @@ export function init() {
   let clickX = 0;
   let clickY = 0;
 
-  document.addEventListener("click", onClick);
+  document.addEventListener("mouseup", onSelectOrClick);
 
-  function onClick(event) {
+  function onSelectOrClick(event) {
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (
@@ -41,6 +42,19 @@ export function init() {
       return;
     }
 
+    // 1. Multi-word selection (phrasal verb / collocation / sentence).
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed) {
+      const phrase = sanitizePhrase(selection.toString());
+      if (phrase && phrase.length >= 2) {
+        showLookup(phrase, event.clientX, event.clientY);
+      } else {
+        hide();
+      }
+      return;
+    }
+
+    // 2. Single-word click.
     const range = document.caretRangeFromPoint(event.clientX, event.clientY);
     if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) {
       hide();
