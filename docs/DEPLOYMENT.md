@@ -39,7 +39,6 @@ at startup. Copy `deploy/env.example` and fill in the keys.
 | `DEEPGRAM_DAILY_LIMIT` | `200` | max Deepgram calls / 24 h |
 | `STT_PROVIDER` | `deepgram` | pre-recorded STT backend: `deepgram` or `whisper` |
 | `WHISPER_BASE_URL` | `http://localhost:8080` | whisper.cpp server base URL |
-| `WHISPER_MODEL` | `whisper-1` | `model` field sent to the whisper server |
 | `WHISPER_TIMEOUT_SECONDS` | `300` | transcription timeout |
 | `WHISPER_MAX_RETRIES` | `2` | retries on 5xx/transport |
 | `RATE_LIMIT_PER_MINUTE` | `30` | per-IP limit on LLM/STT endpoints |
@@ -74,9 +73,9 @@ STT_PROVIDER=whisper
 WHISPER_BASE_URL=http://localhost:8080
 ```
 
-The app downloads the audio and POSTs it to the server's OpenAI-compatible
-`/v1/audio/transcriptions` endpoint, so pre-recorded transcription (the podcast
-**Transcript** button and `/api/radio/transcribe`) works with no Deepgram key.
+The app downloads the audio and POSTs it to the server's `/inference` endpoint,
+so pre-recorded transcription (the podcast **Transcript** button and
+`/api/radio/transcribe`) works with no Deepgram key.
 The live radio teleprompter (`/ws/radio`) still uses Deepgram and needs
 `DEEPGRAM_API_KEY`. See the whisper.cpp README for the latest build flags.
 

@@ -131,7 +131,6 @@ def create_app(
         deepgram = WhisperClient(
             http_client,
             base_url=settings.whisper_base_url,
-            model=settings.whisper_model,
             max_retries=settings.whisper_max_retries,
             timeout=settings.whisper_timeout_seconds,
         )

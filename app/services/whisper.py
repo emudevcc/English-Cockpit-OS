@@ -1,9 +1,9 @@
-"""Typed client for a local whisper.cpp server (OpenAI-compatible speech-to-text).
+"""Typed client for a local whisper.cpp speech-to-text server.
 
 Replaces Deepgram for pre-recorded audio when ``STT_PROVIDER=whisper``. The client
 downloads the audio itself with the shared ``httpx.AsyncClient`` and posts it to the
-whisper.cpp ``/v1/audio/transcriptions`` endpoint. It satisfies the same
-``DeepgramProvider`` protocol, so call sites (``RadioService``) are unchanged.
+whisper.cpp ``/inference`` endpoint. It satisfies the same ``DeepgramProvider``
+protocol, so call sites (``RadioService``) are unchanged.
 """
 
 from __future__ import annotations
@@ -32,13 +32,11 @@ class WhisperClient:
         client: httpx.AsyncClient,
         *,
         base_url: str,
-        model: str = "whisper-1",
         max_retries: int = 2,
         timeout: float | None = None,
     ) -> None:
         self._client = client
         self._base_url = base_url.rstrip("/")
-        self._model = model
         self._max_retries = max_retries
         self._timeout = timeout
 
@@ -63,7 +61,7 @@ class WhisperClient:
         return response.content
 
     async def _transcribe(self, audio: bytes, audio_url: str) -> str:
-        url = f"{self._base_url}/v1/audio/transcriptions"
+        url = f"{self._base_url}/inference"
         filename = _filename_from_url(audio_url)
         last_error: Exception | None = None
         for attempt in range(self._max_retries + 1):
@@ -73,7 +71,6 @@ class WhisperClient:
             try:
                 response = await self._client.post(
                     url,
-                    data={"model": self._model, "response_format": "json"},
                     files={"file": (filename, audio, "application/octet-stream")},
                     timeout=self._timeout,
                 )

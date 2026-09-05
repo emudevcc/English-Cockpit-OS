@@ -150,7 +150,6 @@ Create a `.env` (gitignored) next to the app. Values are read once at startup.
 | `DEEPGRAM_DAILY_LIMIT` | `200` | Max Deepgram calls per 24h (0 = unlimited). |
 | `STT_PROVIDER` | `deepgram` | Pre-recorded STT backend: `deepgram` or `whisper` (local). |
 | `WHISPER_BASE_URL` | `http://localhost:8080` | whisper.cpp server base URL (used when `STT_PROVIDER=whisper`). |
-| `WHISPER_MODEL` | `whisper-1` | `model` field sent to the whisper server (the model is loaded at server start). |
 | `WHISPER_TIMEOUT_SECONDS` | `300` | Transcription timeout. |
 | `WHISPER_MAX_RETRIES` | `2` | Retries on 5xx/transport. |
 | `TLS_CERTFILE` | *(empty)* | TLS cert path (from `deploy/macos/certs.sh`); enables HTTPS when set with `TLS_KEYFILE`. |

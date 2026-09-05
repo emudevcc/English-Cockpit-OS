@@ -25,7 +25,7 @@ async def test_transcribe_url_returns_text() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/audio.mp3":
             return httpx.Response(200, content=b"fake-audio-bytes")
-        if request.url.path == "/v1/audio/transcriptions":
+        if request.url.path == "/inference":
             return httpx.Response(200, json={"text": "Hello, world."})
         return httpx.Response(404)
 

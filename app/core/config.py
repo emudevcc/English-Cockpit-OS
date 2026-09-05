@@ -80,7 +80,6 @@ class Settings(BaseSettings):
     whisper_base_url: str = Field(
         default="http://localhost:8080", validation_alias="WHISPER_BASE_URL"
     )
-    whisper_model: str = Field(default="whisper-1", validation_alias="WHISPER_MODEL")
     whisper_max_retries: int = Field(default=2, ge=0, validation_alias="WHISPER_MAX_RETRIES")
     whisper_timeout_seconds: float = Field(
         default=300.0, gt=0.0, validation_alias="WHISPER_TIMEOUT_SECONDS"

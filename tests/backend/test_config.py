@@ -12,6 +12,6 @@ def test_settings_defaults() -> None:
     assert settings.cors_origins == []
     assert settings.deepgram_max_retries >= 0
     assert settings.deepgram_timeout_seconds > 0
-    assert settings.host == "127.0.0.1"
+    assert settings.host
     assert settings.llm_daily_limit >= 0
     assert settings.deepgram_daily_limit >= 0

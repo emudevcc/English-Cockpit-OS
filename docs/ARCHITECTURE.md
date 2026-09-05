@@ -99,7 +99,7 @@ Transcript feature) is pluggable via `STT_PROVIDER`:
 
 - `deepgram` (default) — `app/services/deepgram.py`, paid, cloud, budgeted.
 - `whisper` — `app/services/whisper.py`, a local whisper.cpp server
-  (OpenAI-compatible `/v1/audio/transcriptions`), free and offline.
+  (`/inference` endpoint), free and offline.
 
 Both implement the same `DeepgramProvider` protocol, so `RadioService` and the
 HTTP layer are unchanged. The live radio teleprompter (`/ws/radio`) still uses
