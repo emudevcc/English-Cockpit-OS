@@ -1,7 +1,8 @@
 # Deployment & Operations
 
-Target: **Raspberry Pi 3B**, 64-bit Raspberry Pi OS Lite, Python 3.11+.
-Dev machine: macOS (Apple Silicon) with Python 3.11+ and Node.js (for frontend tests).
+Target: **macOS (Apple Silicon)**, Python 3.11+. The original Raspberry Pi 3B
+target is still supported via `deploy.sh` / systemd.
+Dev machine: macOS with Python 3.11+ and Node.js (for frontend tests).
 
 ## Local development
 
@@ -36,6 +37,11 @@ at startup. Copy `deploy/env.example` and fill in the keys.
 | `DEEPGRAM_MAX_RETRIES` | `2` | retries on 5xx/429/transport |
 | `DEEPGRAM_ALLOWED_HOSTS` | `[]` | JSON list restricting `audio_url` hosts |
 | `DEEPGRAM_DAILY_LIMIT` | `200` | max Deepgram calls / 24 h |
+| `STT_PROVIDER` | `deepgram` | pre-recorded STT backend: `deepgram` or `whisper` |
+| `WHISPER_BASE_URL` | `http://localhost:8080` | whisper.cpp server base URL |
+| `WHISPER_MODEL` | `whisper-1` | `model` field sent to the whisper server |
+| `WHISPER_TIMEOUT_SECONDS` | `300` | transcription timeout |
+| `WHISPER_MAX_RETRIES` | `2` | retries on 5xx/transport |
 | `RATE_LIMIT_PER_MINUTE` | `30` | per-IP limit on LLM/STT endpoints |
 | `CONTENT_CACHE_TTL_SECONDS` | `600` | news/podcast cache TTL |
 | `DICTIONARY_CACHE_TTL_SECONDS` | `86400` | dictionary cache TTL |
@@ -47,6 +53,69 @@ at startup. Copy `deploy/env.example` and fill in the keys.
 
 Feed URLs (news/podcast/radio stations) are code constants in
 `app/services/{news,podcast,radio}.py`.
+
+## Local Whisper (STT)
+
+Run speech-to-text offline with a local whisper.cpp server (free, no Deepgram key):
+
+```bash
+git clone https://github.com/ggml-org/whisper.cpp
+cd whisper.cpp                               # run every step below from INSIDE this folder
+sh ./models/download-ggml-model.sh small     # base | small | medium (size vs accuracy)
+cmake -B build                               # Metal is auto-enabled on Apple Silicon
+cmake --build build -j
+./build/bin/whisper-server -m models/ggml-small.bin --host 127.0.0.1 --port 8080
+```
+
+Then set in `.env`:
+
+```
+STT_PROVIDER=whisper
+WHISPER_BASE_URL=http://localhost:8080
+```
+
+The app downloads the audio and POSTs it to the server's OpenAI-compatible
+`/v1/audio/transcriptions` endpoint, so pre-recorded transcription (the podcast
+**Transcript** button and `/api/radio/transcribe`) works with no Deepgram key.
+The live radio teleprompter (`/ws/radio`) still uses Deepgram and needs
+`DEEPGRAM_API_KEY`. See the whisper.cpp README for the latest build flags.
+
+## HTTPS (local, macOS)
+
+Microphone and clipboard APIs require a secure context, which only works over
+HTTPS when served from anything other than `localhost`. Generate a locally-trusted
+certificate with [mkcert](https://github.com/FiloSottile/mkcert):
+
+```bash
+brew install mkcert
+./deploy/macos/certs.sh        # generates deploy/certs/localhost.{pem,key}
+```
+
+Then set in `.env`:
+
+```
+HOST=0.0.0.0
+TLS_CERTFILE=deploy/certs/localhost.pem
+TLS_KEYFILE=deploy/certs/localhost-key.pem
+```
+
+Restart and open `https://localhost:8000` (or `https://<lan-ip>:8000` from another
+device). `certs.sh` runs `mkcert -install` once to trust the local CA (asks for your
+password).
+
+## macOS autostart
+
+Install a LaunchAgent (starts on login, restarts on crash):
+
+```bash
+./deploy/macos/install-agent.sh
+```
+
+Open the dashboard in a standalone app-mode Chrome window (no tabs/address bar):
+
+```bash
+./deploy/macos/launch.sh        # COCKPIT_URL=https://localhost:8000 by default
+```
 
 ## One-time Pi setup
 

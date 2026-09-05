@@ -41,7 +41,7 @@ export function init(slot) {
     }),
   );
 
-  slot.append(h("div", { class: "chips" }, tabButtons), content);
+  slot.append(h("div", { class: "segmented" }, tabButtons), content);
 
   function select(id) {
     active = id;

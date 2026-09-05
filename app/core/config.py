@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,6 +32,9 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
 
+    tls_certfile: str = Field(default="", validation_alias="TLS_CERTFILE")
+    tls_keyfile: str = Field(default="", validation_alias="TLS_KEYFILE")
+
     db_path: Path = Field(
         default=Path("data/cockpit.db"),
         validation_alias="COCKPIT_DB",
@@ -45,7 +49,7 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = Field(default_factory=list, validation_alias="CORS_ORIGINS")
 
-    content_cache_ttl_seconds: float = Field(default=600.0, gt=0.0)
+    content_cache_ttl_seconds: float = Field(default=300.0, gt=0.0)
     dictionary_cache_ttl_seconds: float = Field(default=86400.0, gt=0.0)
     rate_limit_per_minute: int = Field(default=30, ge=1)
     new_cards_per_day: int = Field(default=10, ge=1)
@@ -69,6 +73,18 @@ class Settings(BaseSettings):
         default_factory=list, validation_alias="DEEPGRAM_ALLOWED_HOSTS"
     )
     deepgram_daily_limit: int = Field(default=200, ge=0)
+
+    stt_provider: Literal["deepgram", "whisper"] = Field(
+        default="deepgram", validation_alias="STT_PROVIDER"
+    )
+    whisper_base_url: str = Field(
+        default="http://localhost:8080", validation_alias="WHISPER_BASE_URL"
+    )
+    whisper_model: str = Field(default="whisper-1", validation_alias="WHISPER_MODEL")
+    whisper_max_retries: int = Field(default=2, ge=0, validation_alias="WHISPER_MAX_RETRIES")
+    whisper_timeout_seconds: float = Field(
+        default=300.0, gt=0.0, validation_alias="WHISPER_TIMEOUT_SECONDS"
+    )
 
 
 @lru_cache(maxsize=1)

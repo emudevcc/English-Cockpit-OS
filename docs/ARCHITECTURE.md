@@ -39,7 +39,7 @@ Browser ─┤  FastAPI app                                                     
         │   ├─ app.state.http        shared httpx.AsyncClient (pool: 10 conn, keepalive 5)  │
         │   ├─ app.state.db          one aiosqlite connection (WAL + write lock)            │
         │   ├─ app.state.llm         Groq client (retry + JSON mode + spend budget)         │
-        │   ├─ app.state.deepgram    Deepgram client (pre-recorded + budget)                │
+        │   ├─ app.state.deepgram    STT client (Deepgram or local whisper.cpp)            │
         │   ├─ app.state.news/podcast/...  content services (TTL-cached)                    │
         │   ├─ app.state.grammar_drill/writing/monologue/plan  LLM drill & coach services   │
         │   ├─ app.state.ws_manager  WebSocket registry + heartbeat task                    │
@@ -91,6 +91,19 @@ Key points:
 All LLM-generative drill/coach/writing/speaking/plan endpoints are wrapped with
 the per-IP `rate_limited` dependency **and** the 24-hour spend budget, so a
 misbehaving kiosk cannot blow past the daily cap.
+
+## Speech-to-text providers
+
+Pre-recorded transcription (`POST /api/radio/transcribe`, used by the podcast
+Transcript feature) is pluggable via `STT_PROVIDER`:
+
+- `deepgram` (default) — `app/services/deepgram.py`, paid, cloud, budgeted.
+- `whisper` — `app/services/whisper.py`, a local whisper.cpp server
+  (OpenAI-compatible `/v1/audio/transcriptions`), free and offline.
+
+Both implement the same `DeepgramProvider` protocol, so `RadioService` and the
+HTTP layer are unchanged. The live radio teleprompter (`/ws/radio`) still uses
+Deepgram's streaming endpoint and requires a `DEEPGRAM_API_KEY`.
 
 ## Error-handling strategy
 

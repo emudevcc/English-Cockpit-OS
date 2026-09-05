@@ -6,7 +6,7 @@ import { clear, h } from "../lib/dom.js";
 import { highlightSegments } from "../lib/highlight.js";
 import { createWsClient } from "../ws_client.js";
 
-const MAX_HISTORY_LINES = 50;
+const MAX_HISTORY_LINES = 100;
 
 /**
  * @param {HTMLElement} slot
@@ -70,11 +70,11 @@ export function init(slot, ctx) {
     }
   })();
 
-  function toggleLive() {
+  async function toggleLive() {
     if (graph?.streaming) {
       stopStreaming();
     } else {
-      startStreaming();
+      await startStreaming();
     }
   }
 
@@ -88,11 +88,11 @@ export function init(slot, ctx) {
     clear(captionEl);
   }
 
-  function startStreaming() {
+  async function startStreaming() {
     if (!audioEl) return;
     audioEl.play().catch(() => {}); // user gesture enables playback
     if (!graph) {
-      graph = buildGraph(audioEl, viewport);
+      graph = await buildGraph(audioEl, viewport);
       if (!graph) {
         toggleBtn.textContent = "Live transcript: off";
         return;
@@ -157,7 +157,7 @@ function highlightedSegment(text, className) {
   return el;
 }
 
-function buildGraph(audioEl, viewport) {
+async function buildGraph(audioEl, viewport) {
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   if (!AudioContext) {
     viewport.append(h("p", { class: "error", text: "Web Audio API is not supported." }));
@@ -166,27 +166,25 @@ function buildGraph(audioEl, viewport) {
 
   let audioCtx;
   let source;
-  let processor;
+  let workletNode;
   try {
     audioCtx = new AudioContext();
+    await audioCtx.audioWorklet.addModule("/static/js/worklets/pcm-processor.js");
     source = audioCtx.createMediaElementSource(audioEl);
-    processor = audioCtx.createScriptProcessor(4096, 1, 1);
-    source.connect(processor);
-    processor.connect(audioCtx.destination);
+    workletNode = new AudioWorkletNode(audioCtx, "pcm-processor");
+    source.connect(workletNode);
+    workletNode.connect(audioCtx.destination);
   } catch (error) {
     viewport.append(h("p", { class: "error", text: `Audio capture failed: ${error.message}` }));
     return null;
   }
   audioCtx.resume();
 
-  const graph = { audioCtx, source, processor, ws: null, streaming: false, connected: false };
-  processor.onaudioprocess = (event) => {
-    const inputData = event.inputBuffer.getChannelData(0);
-    // ScriptProcessor does not pass audio through automatically: copy input to
-    // output so the radio remains audible while we capture it.
-    event.outputBuffer.getChannelData(0).set(inputData);
+  const graph = { audioCtx, source, workletNode, ws: null, streaming: false, connected: false };
+  workletNode.port.onmessage = (event) => {
+    const chunk = event.data; // Float32Array (4096 samples)
     if (graph.streaming && graph.connected && graph.ws) {
-      const pcm = floatTo16BitPCM(inputData);
+      const pcm = floatTo16BitPCM(chunk);
       graph.ws.send(pcm.buffer); // binary PCM frame (little-endian 16-bit)
     }
   };

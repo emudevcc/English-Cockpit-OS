@@ -1,21 +1,21 @@
 :root {
   color-scheme: dark;
-  --bg: #000000;
-  --surface: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --surface-3: #3a3a3c;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --bg: #1e1e20;
+  --surface: #2a2a2c;
+  --surface-2: #38383a;
+  --surface-3: #4a4a4c;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
   --text: #f5f5f7;
-  --muted: #98989d;
+  --muted: #8e8e93;
   --accent: #0a84ff;
   --accent-strong: #0a6cd6;
   --success: #30d158;
   --danger: #ff453a;
   --warning: #ff9f0a;
-  --radius: 16px;
-  --radius-sm: 10px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.4);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 30px rgba(0, 0, 0, 0.35);
   --font-serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
   --focus: 0 0 0 3px rgba(10, 132, 255, 0.45);
 }
@@ -38,19 +38,35 @@ body {
 .cockpit-header {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 0.7rem 1.5rem;
-  background: var(--bg);
+  gap: 1rem;
+  padding: 0.55rem 1.25rem;
+  background: rgba(30, 30, 32, 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
+.traffic-lights {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.traffic-lights span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.tl-close { background: #ff5f57; }
+.tl-min { background: #febc2e; }
+.tl-max { background: #28c840; }
+
 .cockpit-title {
   margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 
@@ -560,6 +576,33 @@ button:disabled {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+/* macOS segmented control (tab bars) */
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.segmented .chip {
+  border: none;
+  background: transparent;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 7px;
+  color: var(--muted);
+}
+.segmented .chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: transparent;
+}
+.segmented .chip.is-active {
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .chip.is-live {
   color: var(--danger);

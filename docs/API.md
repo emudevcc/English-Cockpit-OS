@@ -18,7 +18,7 @@ and responses are validated with Pydantic. Error bodies are `{"detail": "..."}`.
 
 ### `GET /healthz`
 Liveness probe + config flags:
-`{"status":"ok","app":"English Cockpit OS","llm_configured":true,"deepgram_configured":true}`
+`{"status":"ok","app":"English Cockpit OS","llm_configured":true,"stt_provider":"deepgram","deepgram_configured":true,"whisper_configured":false}`
 
 ### `GET /healthz/external`
 Live (free) reachability probe of Groq and Deepgram:
@@ -239,7 +239,9 @@ Generate a personalized seven-day plan (LLM). Request
 ```
 
 ### `POST /api/radio/transcribe`
-Transcribe a remote audio URL (Deepgram pre-recorded) and highlight connectors.
+Transcribe a remote audio URL and highlight connectors. Uses Deepgram by default;
+set `STT_PROVIDER=whisper` to route through a local whisper.cpp server instead
+(same request/response shape).
 
 Request `{"audio_url":"https://…"}` (http/https only; optional `DEEPGRAM_ALLOWED_HOSTS`).
 ```json

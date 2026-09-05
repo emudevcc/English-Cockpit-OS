@@ -45,6 +45,7 @@ app/
     llm.py                 Groq client with retry + JSON mode + budget
     deepgram.py            Deepgram pre-recorded STT client
     deepgram_live.py       Deepgram live (streaming) STT session
+    whisper.py             local whisper.cpp STT client (when STT_PROVIDER=whisper)
     rss.py                 feed fetch/parse (offloaded to a thread)
     news.py, podcast.py    content pipelines (cached, graceful degrade)
     prep.py, declutter.py, voice.py, radio.py, connectors.py
@@ -73,7 +74,7 @@ tests/frontend             node:test (55 tests)
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/healthz` | liveness + `llm_configured`/`deepgram_configured` |
+| GET | `/healthz` | liveness + `llm_configured`/`stt_provider`/`whisper_configured` |
 | GET | `/healthz/external` | live Groq/Deepgram reachability probe |
 | WS  | `/ws` | heartbeat (`ping`/`pong`) + broadcast bus |
 | WS  | `/ws/radio` | live STT relay (browser PCM upload → Deepgram) |
@@ -147,6 +148,13 @@ Create a `.env` (gitignored) next to the app. Values are read once at startup.
 | `RATE_LIMIT_PER_MINUTE` | `30` | Per-IP rate limit on LLM/STT endpoints. |
 | `LLM_DAILY_LIMIT` | `1000` | Max LLM calls per 24h (0 = unlimited). |
 | `DEEPGRAM_DAILY_LIMIT` | `200` | Max Deepgram calls per 24h (0 = unlimited). |
+| `STT_PROVIDER` | `deepgram` | Pre-recorded STT backend: `deepgram` or `whisper` (local). |
+| `WHISPER_BASE_URL` | `http://localhost:8080` | whisper.cpp server base URL (used when `STT_PROVIDER=whisper`). |
+| `WHISPER_MODEL` | `whisper-1` | `model` field sent to the whisper server (the model is loaded at server start). |
+| `WHISPER_TIMEOUT_SECONDS` | `300` | Transcription timeout. |
+| `WHISPER_MAX_RETRIES` | `2` | Retries on 5xx/transport. |
+| `TLS_CERTFILE` | *(empty)* | TLS cert path (from `deploy/macos/certs.sh`); enables HTTPS when set with `TLS_KEYFILE`. |
+| `TLS_KEYFILE` | *(empty)* | TLS private-key path. |
 | `WS_MAX_CONNECTIONS` | `100` | WebSocket connection cap. |
 | `NEW_CARDS_PER_DAY` | `10` | New SRS cards introduced per session. |
 | `DAILY_REVIEW_GOAL` | `20` | Daily review goal for the header ring. |

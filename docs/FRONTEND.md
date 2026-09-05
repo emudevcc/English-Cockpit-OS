@@ -81,9 +81,9 @@ templates/index.html         13 <section data-module> cards
 
 ## Design language
 
-- **Apple-inspired**: near-black `#000` canvas, `#1c1c1e` cards, Apple system colors
-  (`#0a84ff` accent), 16 px radii, layered soft shadows, pill buttons, hairline borders,
-  and a subtle top light-catch on cards.
+- **macOS-native**: macOS dark palette (`#1e1e20` window, `#2a2a2c` panels), the SF/system
+  font, a title bar with traffic-light controls and backdrop blur, segmented controls for
+  tab bars, hairline borders, and layered soft shadows.
 - **Kindle-inspired reading**: a serif stack (Georgia/Iowan) for definitions, examples,
   briefs, transcript captions, and shadowing sentences.
 - **Habit-forming**: the header shows a time-of-day greeting, the 🔥 streak, and an

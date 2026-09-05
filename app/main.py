@@ -59,6 +59,11 @@ from app.services.register import RegisterService
 from app.services.srs import SrsService
 from app.services.srs_seed import seed_default_deck
 from app.services.voice import VoiceService
+from app.services.whisper import (
+    WhisperClient,
+    WhisperError,
+    WhisperNotConfiguredError,
+)
 from app.services.writing import WritingCoachService
 
 
@@ -105,7 +110,7 @@ def create_app(
     if http_client is None:
         http_client = httpx.AsyncClient(
             timeout=httpx.Timeout(30.0),
-            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+            limits=httpx.Limits(max_connections=50, max_keepalive_connections=20),
             follow_redirects=True,
         )
     app.state.http = http_client
@@ -122,7 +127,15 @@ def create_app(
         )
     app.state.llm = llm
 
-    if deepgram is None:
+    if settings.stt_provider == "whisper":
+        deepgram = WhisperClient(
+            http_client,
+            base_url=settings.whisper_base_url,
+            model=settings.whisper_model,
+            max_retries=settings.whisper_max_retries,
+            timeout=settings.whisper_timeout_seconds,
+        )
+    elif deepgram is None:
         deepgram = DeepgramClient(
             http_client,
             api_key=settings.deepgram_api_key,
@@ -179,7 +192,9 @@ def create_app(
             "status": "ok",
             "app": settings.app_name,
             "llm_configured": bool(settings.llm_api_key),
+            "stt_provider": settings.stt_provider,
             "deepgram_configured": bool(settings.deepgram_api_key),
+            "whisper_configured": settings.stt_provider == "whisper",
         }
 
     @app.get("/healthz/external", tags=["system"])
@@ -249,6 +264,16 @@ def _register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(DeepgramError)
     async def _deepgram_error(request: Request, exc: DeepgramError) -> JSONResponse:
+        return JSONResponse(status_code=502, content={"detail": str(exc)})
+
+    @app.exception_handler(WhisperNotConfiguredError)
+    async def _whisper_not_configured(
+        request: Request, exc: WhisperNotConfiguredError
+    ) -> JSONResponse:
+        return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+    @app.exception_handler(WhisperError)
+    async def _whisper_error(request: Request, exc: WhisperError) -> JSONResponse:
         return JSONResponse(status_code=502, content={"detail": str(exc)})
 
 
